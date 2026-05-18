@@ -1,0 +1,49 @@
+257589719	6	T_ALOS	Major	RDE0024_DWDM Site_RTN 905	Clear	2025-07-10 17:52:03.000	2025-07-10 17:52:08.000	00:00:05	9-MP1-1(SDH_TU-1)-PPI:1	Sudatel	RDE0024-DOR3217	HADALYA - DORDAIB	RDE0024	16.1425	36.1136	Kassala	Zone4	Huawei	B	No	No	DOR3217	17.54012	36.08081		
+257589696	6	T_ALOS	Major	RDS0074_ATBHYA7	Clear	2025-07-10 17:52:03.000	2025-07-10 17:52:08.000	00:00:05	19-SP3S-1(SDH_TU-1)-PPI:1																RDS0074_ATBHYA7	RDS0075_ATB-HYA8
+257588375	0		Minor		Clear	2025-07-10 17:52:03.000	2025-07-10 17:52:18.000	00:00:15	Slot ID=0 Card ID=4 Port ID=0 HpIndex=1 LpIndex=42																	
+257589694	9	ETH_LOS	Critical	AZH3922_AZAZAH_RTN 905	Clear	2025-07-10 17:52:02.000	2025-07-10 17:52:05.000	00:00:03	7-EG6-2(2G)-MAC:1																AZH3922_AZAZAH_RTN 905	UBG3923_UMBGRA_RTN 950A
+257589693	0		Major	BRG5433_ALBARGANA_RTN 910A	Clear	2025-07-10 17:52:02.000	2025-07-10 17:52:02.000	00:00:00	"	-"																BRG5433_ALBARGANA_RTN 910A	HMR0532_OM-HAMRA_RTN 950A
+
+
+
+
+this is the view we get from and its coloumns
+
+-- dwh.fibergis_alarm_log source
+
+CREATE OR REPLACE VIEW dwh.fibergis_alarm_log
+AS SELECT ff."Log_Serial_Number",
+    ff."Alarm_key",
+    ff."Alarm_Name",
+    ff."Alarm_Severity",
+    ff."Alarm_Source",
+        CASE
+            WHEN ff."Status"::text = ANY (ARRAY['Unacknowledged and cleared Alarm'::text, 'Acknowledged and cleared Alarm'::text]) THEN 'Clear'::text
+            ELSE 'Not Clear'::text
+        END AS "Status",
+    ff."OccurrenceTime",
+    ff."ClearanceTime",
+        CASE
+            WHEN ff.downtime < 0 THEN NULL::interval
+            ELSE justify_interval(make_interval(secs => ff.downtime::double precision))
+        END AS "DownTime",
+    ff."LocationInformation",
+    ff."Contractor",
+    ff."FiberlinkSite_ID",
+    ff."FiberLinkSite_Name",
+    ff."Site_A_ID",
+    ff."Site_A_Latitude",
+    ff."Site_A_Longitude",
+    ff."State",
+    ff."Zone",
+    ff."Vendor",
+    ff."Site_Priority",
+    ff."Is_Hub",
+    ff."Is_VIP",
+    ff."Site_B_ID",
+    ff."Site_B_Latitude",
+    ff."Site_B_Longitude",
+    ff."Source_NE",
+    ff."Sink_NE"
+   FROM dwh.fact_fiber ff
+     LEFT JOIN dwh.dim_dwdm_site dds ON dds."Site_ID"::text = ff."Site_A_ID"::text;

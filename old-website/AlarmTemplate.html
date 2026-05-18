@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Alarms | Sudan Fiber GIS Dashboard</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>tailwind.config={theme:{extend:{colors:{primary:'#3b82f6',secondary:'#64748b'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<style>
+:where([class^="ri-"])::before { content: "\f3c2"; }
+body {
+font-family: 'Inter', sans-serif;
+background-color: #f9fafb;
+}
+.custom-scrollbar::-webkit-scrollbar {
+width: 6px;
+height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+background: #f1f1f1;
+border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+background: #c1c1c1;
+border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+background: #a1a1a1;
+}
+.custom-switch {
+position: relative;
+display: inline-block;
+width: 44px;
+height: 24px;
+}
+.custom-switch input {
+opacity: 0;
+width: 0;
+height: 0;
+}
+.switch-slider {
+position: absolute;
+cursor: pointer;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background-color: #e5e7eb;
+transition: .4s;
+border-radius: 24px;
+}
+.switch-slider:before {
+position: absolute;
+content: "";
+height: 18px;
+width: 18px;
+left: 3px;
+bottom: 3px;
+background-color: white;
+transition: .4s;
+border-radius: 50%;
+}
+input:checked + .switch-slider {
+background-color: #3b82f6;
+}
+input:checked + .switch-slider:before {
+transform: translateX(20px);
+}
+.custom-range {
+-webkit-appearance: none;
+width: 100%;
+height: 6px;
+border-radius: 5px;
+background: #e5e7eb;
+outline: none;
+}
+.custom-range::-webkit-slider-thumb {
+-webkit-appearance: none;
+appearance: none;
+width: 16px;
+height: 16px;
+border-radius: 50%;
+background: #3b82f6;
+cursor: pointer;
+}
+.custom-checkbox {
+position: relative;
+display: inline-block;
+width: 18px;
+height: 18px;
+}
+.custom-checkbox input {
+opacity: 0;
+width: 0;
+height: 0;
+}
+.checkbox-mark {
+position: absolute;
+top: 0;
+left: 0;
+height: 18px;
+width: 18px;
+background-color: #fff;
+border: 2px solid #d1d5db;
+border-radius: 4px;
+}
+.custom-checkbox input:checked ~ .checkbox-mark {
+background-color: #3b82f6;
+border-color: #3b82f6;
+}
+.checkbox-mark:after {
+content: "";
+position: absolute;
+display: none;
+}
+.custom-checkbox input:checked ~ .checkbox-mark:after {
+display: block;
+}
+.custom-checkbox .checkbox-mark:after {
+left: 5px;
+top: 2px;
+width: 5px;
+height: 10px;
+border: solid white;
+border-width: 0 2px 2px 0;
+transform: rotate(45deg);
+}
+.custom-radio {
+position: relative;
+display: inline-block;
+width: 18px;
+height: 18px;
+}
+.custom-radio input {
+opacity: 0;
+width: 0;
+height: 0;
+}
+.radio-mark {
+position: absolute;
+top: 0;
+left: 0;
+height: 18px;
+width: 18px;
+background-color: #fff;
+border: 2px solid #d1d5db;
+border-radius: 50%;
+}
+.custom-radio input:checked ~ .radio-mark {
+border-color: #3b82f6;
+}
+.radio-mark:after {
+content: "";
+position: absolute;
+display: none;
+}
+.custom-radio input:checked ~ .radio-mark:after {
+display: block;
+}
+.custom-radio .radio-mark:after {
+top: 3px;
+left: 3px;
+width: 8px;
+height: 8px;
+border-radius: 50%;
+background: #3b82f6;
+}
+.severity-critical {
+background-color: rgba(239, 68, 68, 0.15);
+color: #b91c1c;
+border-left: 3px solid #ef4444;
+}
+.severity-major {
+background-color: rgba(249, 115, 22, 0.15);
+color: #c2410c;
+border-left: 3px solid #f97316;
+}
+.severity-minor {
+background-color: rgba(234, 179, 8, 0.15);
+color: #a16207;
+border-left: 3px solid #eab308;
+}
+.severity-warning {
+background-color: rgba(59, 130, 246, 0.15);
+color: #1d4ed8;
+border-left: 3px solid #3b82f6;
+}
+.status-badge {
+display: inline-flex;
+align-items: center;
+border-radius: 9999px;
+padding: 0.25rem 0.75rem;
+font-size: 0.75rem;
+font-weight: 500;
+}
+.status-new {
+background-color: rgba(239, 68, 68, 0.15);
+color: #b91c1c;
+}
+.status-acknowledged {
+background-color: rgba(249, 115, 22, 0.15);
+color: #c2410c;
+}
+.status-in-progress {
+background-color: rgba(59, 130, 246, 0.15);
+color: #1d4ed8;
+}
+.status-resolved {
+background-color: rgba(34, 197, 94, 0.15);
+color: #15803d;
+}
+</style>
+</head>
+<body>
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar -->
+<div class="w-64 bg-white shadow-lg z-10 flex flex-col">
+<div class="p-4 border-b border-gray-200 flex items-center space-x-2">
+<div class="w-8 h-8 flex items-center justify-center bg-primary rounded-full text-white">
+<i class="ri-global-line ri-lg"></i>
+</div>
+<span class="font-['Pacifico'] text-xl text-gray-800">GIS Monitor</span>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<div class="p-4">
+<div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Main</div>
+<nav>
+<a href="https://readdy.ai/home/bbe95eca-ede7-4dc6-9479-79f4c28f6ede/8c8a81d9-87a5-4265-987d-f4b078ea428c" data-readdy="true" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-dashboard-line"></i>
+</div>
+Dashboard
+</a>
+<a href="https://readdy.ai/home/bbe95eca-ede7-4dc6-9479-79f4c28f6ede/dd7f1b05-a707-4b18-a718-c8cb5131fb50" data-readdy="true" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-map-pin-line"></i>
+</div>
+Node Map
+</a>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md bg-primary bg-opacity-10 text-primary mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-alarm-warning-line"></i>
+</div>
+Alarms
+</a>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-bar-chart-line"></i>
+</div>
+Performance
+</a>
+</nav>
+</div>
+<div class="p-4">
+<div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Maintenance</div>
+<nav>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-tools-line"></i>
+</div>
+Work Orders
+</a>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-team-line"></i>
+</div>
+Field Teams
+</a>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-history-line"></i>
+</div>
+Incident History
+</a>
+</nav>
+</div>
+<div class="p-4">
+<div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Reports</div>
+<nav>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-file-chart-line"></i>
+</div>
+KPI Reports
+</a>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-projector-line"></i>
+</div>
+Project Status
+</a>
+</nav>
+</div>
+</div>
+<div class="p-4 border-t border-gray-200">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600">
+<i class="ri-user-line ri-lg"></i>
+</div>
+<div>
+<div class="text-sm font-medium text-gray-700">Ahmed Hassan</div>
+<div class="text-xs text-gray-500">NMS Team Lead</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Content -->
+<div class="flex-1 flex flex-col overflow-hidden">
+<!-- Top Header -->
+<header class="bg-white shadow-sm z-10">
+<div class="flex items-center justify-between px-6 py-3 border-b border-gray-200">
+<div class="flex items-center space-x-4">
+<h1 class="text-lg font-semibold text-gray-800">Network Alarms</h1>
+<div class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 flex items-center">
+<span class="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+Live Data
+</div>
+<div class="text-xs text-gray-500">Last update: April 9, 2025 - 10:23 AM</div>
+</div>
+<div class="flex items-center space-x-4">
+<div class="relative" id="team-dropdown-container">
+<button class="flex items-center space-x-1 text-sm font-medium text-gray-700 hover:text-gray-900 !rounded-button" id="team-button">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-user-settings-line"></i>
+</div>
+<span>NMS Team</span>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+<div id="team-dropdown" class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 hidden">
+<div class="p-3 border-b border-gray-200">
+<h3 class="text-sm font-medium text-gray-800">Team Selection</h3>
+</div>
+<div class="py-2">
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-team-line"></i>
+</div>
+<span>My Team</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-user-settings-line"></i>
+</div>
+<span>Team Management</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-arrow-left-right-line"></i>
+</div>
+<span>Switch Team</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-bar-chart-line"></i>
+</div>
+<span>Team Performance</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-settings-line"></i>
+</div>
+<span>Team Settings</span>
+</a>
+</div>
+</div>
+</div>
+<div class="w-px h-6 bg-gray-300"></div>
+<div class="relative">
+<button class="p-1 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+<div class="w-6 h-6 flex items-center justify-center">
+<i class="ri-notification-3-line"></i>
+</div>
+</button>
+<div class="absolute top-0 right-0 w-2 h-2 rounded-full bg-red-500"></div>
+</div>
+<div class="relative" id="settings-dropdown-container">
+<button class="p-1 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100" id="settings-button">
+<div class="w-6 h-6 flex items-center justify-center">
+<i class="ri-settings-3-line"></i>
+</div>
+</button>
+<div id="settings-dropdown" class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 hidden">
+<div class="p-3 border-b border-gray-200">
+<h3 class="text-sm font-medium text-gray-800">Settings</h3>
+</div>
+<div class="py-2">
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-user-settings-line"></i>
+</div>
+<span>User Preferences</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-computer-line"></i>
+</div>
+<span>Display Settings</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-notification-3-line"></i>
+</div>
+<span>Notification Settings</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-refresh-line"></i>
+</div>
+<span>Data Refresh Rate</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-map-2-line"></i>
+</div>
+<span>Map Configuration</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-translate-2"></i>
+</div>
+<span>Language Selection</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-palette-line"></i>
+</div>
+<span>Theme Options</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Filter Toolbar -->
+<div class="px-6 py-2 flex items-center space-x-4 bg-white border-b border-gray-200">
+<div class="flex items-center space-x-2">
+<label class="text-sm font-medium text-gray-700">Severity:</label>
+<div class="relative">
+<button class="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 !rounded-button whitespace-nowrap" id="severity-filter-btn">
+<span>All Severities</span>
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+<div id="severity-filter-dropdown" class="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 hidden">
+<div class="p-2 space-y-1">
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Critical</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Major</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Minor</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Warning</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<label class="text-sm font-medium text-gray-700">Region:</label>
+<div class="relative">
+<button class="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 !rounded-button whitespace-nowrap" id="region-filter-btn">
+<span>All Regions</span>
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+<div id="region-filter-dropdown" class="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 hidden">
+<div class="p-2 space-y-1">
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Khartoum</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Eastern</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Northern</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Western</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Southern</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<label class="text-sm font-medium text-gray-700">Status:</label>
+<div class="relative">
+<button class="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 !rounded-button whitespace-nowrap" id="status-filter-btn">
+<span>All Statuses</span>
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+<div id="status-filter-dropdown" class="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 hidden">
+<div class="p-2 space-y-1">
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">New</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Acknowledged</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">In Progress</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Resolved</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<label class="text-sm font-medium text-gray-700">Time Period:</label>
+<div class="relative">
+<button class="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 !rounded-button whitespace-nowrap" id="time-filter-btn">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-calendar-line"></i>
+</div>
+<span>Last 24 Hours</span>
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+<div id="time-filter-dropdown" class="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 hidden">
+<div class="p-2 space-y-1">
+<button class="w-full text-left p-2 text-sm text-gray-700 hover:bg-gray-50 rounded">Last 24 Hours</button>
+<button class="w-full text-left p-2 text-sm text-gray-700 hover:bg-gray-50 rounded">Last 7 Days</button>
+<button class="w-full text-left p-2 text-sm text-gray-700 hover:bg-gray-50 rounded">Last 30 Days</button>
+<button class="w-full text-left p-2 text-sm text-gray-700 hover:bg-gray-50 rounded">Custom Range...</button>
+</div>
+</div>
+</div>
+</div>
+<div class="relative ml-auto">
+<div class="flex items-center border border-gray-300 rounded-md overflow-hidden">
+<input type="text" placeholder="Search alarms..." class="px-3 py-1.5 text-sm text-gray-700 border-none focus:outline-none focus:ring-0">
+<button class="px-3 py-1.5 bg-gray-50 text-gray-500 hover:text-gray-700 border-l border-gray-300">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-search-line"></i>
+</div>
+</button>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<div class="flex items-center space-x-1">
+<span class="text-sm text-gray-600">Auto-refresh:</span>
+<label class="custom-switch">
+<input type="checkbox" checked>
+<span class="switch-slider"></span>
+</label>
+<span class="text-sm text-gray-600">30s</span>
+</div>
+<button class="flex items-center space-x-1 px-3 py-1.5 bg-primary text-white rounded-md text-sm hover:bg-primary/90 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-refresh-line"></i>
+</div>
+<span>Refresh</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<main class="flex-1 overflow-y-auto p-6 custom-scrollbar bg-gray-50">
+<!-- Alarm Stats Cards -->
+<div class="grid grid-cols-4 gap-6 mb-6">
+<div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+<div class="flex items-center justify-between mb-2">
+<h3 class="text-sm font-medium text-gray-500">Total Active Alarms</h3>
+<div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+<i class="ri-alarm-warning-line"></i>
+</div>
+</div>
+<div class="flex items-end justify-between">
+<div>
+<div class="text-2xl font-bold text-gray-800">32</div>
+<div class="flex items-center text-xs text-red-600 font-medium">
+<div class="w-3 h-3 flex items-center justify-center mr-1">
+<i class="ri-arrow-up-s-line"></i>
+</div>
+<span>+7 since yesterday</span>
+</div>
+</div>
+<div class="w-16 h-12" id="total-alarms-trend-chart"></div>
+</div>
+</div>
+<div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+<div class="flex items-center justify-between mb-2">
+<h3 class="text-sm font-medium text-gray-500">Critical Alarms</h3>
+<div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+<i class="ri-error-warning-line"></i>
+</div>
+</div>
+<div class="flex items-end justify-between">
+<div>
+<div class="text-2xl font-bold text-gray-800">7</div>
+<div class="flex items-center text-xs text-red-600 font-medium">
+<div class="w-3 h-3 flex items-center justify-center mr-1">
+<i class="ri-arrow-up-s-line"></i>
+</div>
+<span>+2 since yesterday</span>
+</div>
+</div>
+<div class="w-16 h-12" id="critical-alarms-trend-chart"></div>
+</div>
+</div>
+<div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+<div class="flex items-center justify-between mb-2">
+<h3 class="text-sm font-medium text-gray-500">Alarms in Last 24h</h3>
+<div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+<i class="ri-time-line"></i>
+</div>
+</div>
+<div class="flex items-end justify-between">
+<div>
+<div class="text-2xl font-bold text-gray-800">18</div>
+<div class="flex items-center text-xs text-green-600 font-medium">
+<div class="w-3 h-3 flex items-center justify-center mr-1">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+<span>-3 from previous 24h</span>
+</div>
+</div>
+<div class="w-16 h-12" id="last24h-alarms-trend-chart"></div>
+</div>
+</div>
+<div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+<div class="flex items-center justify-between mb-2">
+<h3 class="text-sm font-medium text-gray-500">Avg. Resolution Time</h3>
+<div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+<i class="ri-timer-line"></i>
+</div>
+</div>
+<div class="flex items-end justify-between">
+<div>
+<div class="text-2xl font-bold text-gray-800">4.2h</div>
+<div class="flex items-center text-xs text-green-600 font-medium">
+<div class="w-3 h-3 flex items-center justify-center mr-1">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+<span>-0.8h from last week</span>
+</div>
+</div>
+<div class="w-16 h-12" id="resolution-time-trend-chart"></div>
+</div>
+</div>
+</div>
+<!-- Alarm Visualization & Map Section -->
+<div class="grid grid-cols-3 gap-6 mb-6">
+<!-- Alarm Distribution Chart -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+<div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+<h2 class="text-sm font-medium text-gray-800">Alarm Distribution by Severity</h2>
+<div class="flex items-center space-x-2">
+<button class="text-xs text-gray-600 hover:text-gray-900 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-download-line"></i>
+</div>
+</button>
+</div>
+</div>
+<div class="p-4">
+<div id="alarm-severity-chart" style="height: 220px;"></div>
+</div>
+</div>
+<!-- Alarm Trend Chart -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+<div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+<h2 class="text-sm font-medium text-gray-800">Alarm Trend (Last 7 Days)</h2>
+<div class="flex items-center space-x-2">
+<button class="text-xs text-gray-600 hover:text-gray-900 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-download-line"></i>
+</div>
+</button>
+</div>
+</div>
+<div class="p-4">
+<div id="alarm-trend-chart" style="height: 220px;"></div>
+</div>
+</div>
+<!-- Alarm Hotspots Map -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+<div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+<h2 class="text-sm font-medium text-gray-800">Alarm Hotspots</h2>
+<button class="text-xs text-primary hover:text-primary/80 font-medium !rounded-button whitespace-nowrap">View Full Map</button>
+</div>
+<div class="relative h-[220px]">
+<div class="absolute inset-0" style="background-image: url('https://public.readdy.ai/gen_page/map_placeholder_1280x720.png'); background-size: cover; background-position: center;"></div>
+<div class="absolute inset-0 bg-black bg-opacity-10"></div>
+<!-- Map Markers (Sample) -->
+<div class="absolute top-1/4 left-1/3 w-4 h-4 bg-red-500 rounded-full shadow-lg cursor-pointer transform hover:scale-150 transition-transform" title="Khartoum Node #12 - 4 Critical Alarms"></div>
+<div class="absolute top-1/3 left-1/2 w-3 h-3 bg-orange-500 rounded-full shadow-lg cursor-pointer transform hover:scale-150 transition-transform" title="Omdurman Node #8 - 2 Major Alarms"></div>
+<div class="absolute top-1/2 left-1/4 w-3 h-3 bg-yellow-500 rounded-full shadow-lg cursor-pointer transform hover:scale-150 transition-transform" title="Port Sudan Node #3 - 3 Minor Alarms"></div>
+<div class="absolute top-2/3 left-1/3 w-4 h-4 bg-red-500 rounded-full shadow-lg cursor-pointer transform hover:scale-150 transition-transform" title="Kassala Node #5 - 3 Critical Alarms"></div>
+<div class="absolute top-1/2 left-2/3 w-3 h-3 bg-blue-500 rounded-full shadow-lg cursor-pointer transform hover:scale-150 transition-transform" title="El Obeid Node #17 - 2 Warning Alarms"></div>
+<!-- Map Controls -->
+<div class="absolute top-2 right-2 bg-white rounded-lg shadow-md p-1 flex space-x-1">
+<button class="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md">
+<i class="ri-zoom-in-line"></i>
+</button>
+<button class="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md">
+<i class="ri-zoom-out-line"></i>
+</button>
+<button class="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md">
+<i class="ri-refresh-line"></i>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Alarm List Table -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
+<div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+<div class="flex items-center space-x-4">
+<h2 class="text-base font-medium text-gray-800">Active Alarms</h2>
+<div class="flex items-center space-x-2 text-xs">
+<span class="flex items-center space-x-1">
+<span class="inline-block w-3 h-3 bg-red-500 rounded-full"></span>
+<span class="text-gray-600">Critical (7)</span>
+</span>
+<span class="flex items-center space-x-1">
+<span class="inline-block w-3 h-3 bg-orange-500 rounded-full"></span>
+<span class="text-gray-600">Major (12)</span>
+</span>
+<span class="flex items-center space-x-1">
+<span class="inline-block w-3 h-3 bg-yellow-500 rounded-full"></span>
+<span class="text-gray-600">Minor (8)</span>
+</span>
+<span class="flex items-center space-x-1">
+<span class="inline-block w-3 h-3 bg-blue-500 rounded-full"></span>
+<span class="text-gray-600">Warning (5)</span>
+</span>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<button class="flex items-center space-x-1 px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 !rounded-button whitespace-nowrap">
+<div class="w-3.5 h-3.5 flex items-center justify-center">
+<i class="ri-download-line"></i>
+</div>
+<span>Export</span>
+</button>
+<button class="flex items-center space-x-1 px-2 py-1 text-xs font-medium text-primary bg-primary/10 border border-primary/30 rounded-md hover:bg-primary/20 !rounded-button whitespace-nowrap">
+<div class="w-3.5 h-3.5 flex items-center justify-center">
+<i class="ri-filter-line"></i>
+</div>
+<span>Filters</span>
+</button>
+<button class="flex items-center space-x-1 px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 !rounded-button whitespace-nowrap">
+<div class="w-3.5 h-3.5 flex items-center justify-center">
+<i class="ri-settings-4-line"></i>
+</div>
+<span>Columns</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="min-w-full divide-y divide-gray-200">
+<thead class="bg-gray-50">
+<tr>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
+<span class="custom-checkbox">
+<input type="checkbox" id="select-all">
+<span class="checkbox-mark"></span>
+</span>
+</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alarm ID</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Detected</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="bg-white divide-y divide-gray-200">
+<tr class="severity-critical">
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="custom-checkbox">
+<input type="checkbox">
+<span class="checkbox-mark"></span>
+</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Critical</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">ALM-2025-0428</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Fiber cut detected on main backbone</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Khartoum North #5</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Apr 9, 2025 08:42:13</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">1h 41m</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="status-badge status-new">New</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Unassigned</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+<div class="flex items-center space-x-2">
+<button class="p-1 text-primary hover:text-primary/80 hover:bg-primary/10 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-check-line"></i>
+</div>
+</button>
+<button class="p-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-user-add-line"></i>
+</div>
+</button>
+<button class="p-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-alarm-warning-line"></i>
+</div>
+</button>
+</div>
+</td>
+</tr>
+<tr class="severity-critical">
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="custom-checkbox">
+<input type="checkbox">
+<span class="checkbox-mark"></span>
+</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Critical</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">ALM-2025-0427</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Power supply failure on main node</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Port Sudan #12</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Apr 9, 2025 07:18:45</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">3h 05m</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="status-badge status-acknowledged">Acknowledged</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Ibrahim Osman</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+<div class="flex items-center space-x-2">
+<button class="p-1 text-primary hover:text-primary/80 hover:bg-primary/10 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-check-line"></i>
+</div>
+</button>
+<button class="p-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-user-add-line"></i>
+</div>
+</button>
+<button class="p-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-alarm-warning-line"></i>
+</div>
+</button>
+</div>
+</td>
+</tr>
+<tr class="severity-major">
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="custom-checkbox">
+<input type="checkbox">
+<span class="checkbox-mark"></span>
+</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Major</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">ALM-2025-0426</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">High BER detected on eastern link</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Kassala #8</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Apr 9, 2025 06:52:21</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">3h 31m</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="status-badge status-in-progress">In Progress</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Fatima Ahmed</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+<div class="flex items-center space-x-2">
+<button class="p-1 text-primary hover:text-primary/80 hover:bg-primary/10 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-check-line"></i>
+</div>
+</button>
+<button class="p-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-user-add-line"></i>
+</div>
+</button>
+<button class="p-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-alarm-warning-line"></i>
+</div>
+</button>
+</div>
+</td>
+</tr>
+<tr class="severity-major">
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="custom-checkbox">
+<input type="checkbox">
+<span class="checkbox-mark"></span>
+</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Major</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">ALM-2025-0425</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Cooling system failure in node cabinet</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">El Obeid #3</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Apr 9, 2025 05:37:10</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">4h 46m</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="status-badge status-acknowledged">Acknowledged</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Mohammed Ali</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+<div class="flex items-center space-x-2">
+<button class="p-1 text-primary hover:text-primary/80 hover:bg-primary/10 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-check-line"></i>
+</div>
+</button>
+<button class="p-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-user-add-line"></i>
+</div>
+</button>
+<button class="p-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-alarm-warning-line"></i>
+</div>
+</button>
+</div>
+</td>
+</tr>
+<tr class="severity-minor">
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="custom-checkbox">
+<input type="checkbox">
+<span class="checkbox-mark"></span>
+</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Minor</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">ALM-2025-0424</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Optical power level degradation</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Wad Madani #7</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Apr 9, 2025 04:12:38</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">6h 11m</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="status-badge status-in-progress">In Progress</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Aisha Khalid</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+<div class="flex items-center space-x-2">
+<button class="p-1 text-primary hover:text-primary/80 hover:bg-primary/10 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-check-line"></i>
+</div>
+</button>
+<button class="p-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-user-add-line"></i>
+</div>
+</button>
+<button class="p-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-alarm-warning-line"></i>
+</div>
+</button>
+</div>
+</td>
+</tr>
+<tr class="severity-warning">
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="custom-checkbox">
+<input type="checkbox">
+<span class="checkbox-mark"></span>
+</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Warning</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">ALM-2025-0423</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Battery backup capacity below threshold</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Khartoum #2</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Apr 9, 2025 03:45:52</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">6h 37m</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="status-badge status-acknowledged">Acknowledged</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Unassigned</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+<div class="flex items-center space-x-2">
+<button class="p-1 text-primary hover:text-primary/80 hover:bg-primary/10 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-check-line"></i>
+</div>
+</button>
+<button class="p-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-user-add-line"></i>
+</div>
+</button>
+<button class="p-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-alarm-warning-line"></i>
+</div>
+</button>
+</div>
+</td>
+</tr>
+<tr class="severity-critical">
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="custom-checkbox">
+<input type="checkbox">
+<span class="checkbox-mark"></span>
+</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Critical</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">ALM-2025-0422</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Multiple link failures on southern route</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Nyala #4</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Apr 9, 2025 02:28:15</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">7h 55m</td>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="status-badge status-in-progress">In Progress</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Omar Ibrahim</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+<div class="flex items-center space-x-2">
+<button class="p-1 text-primary hover:text-primary/80 hover:bg-primary/10 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-check-line"></i>
+</div>
+</button>
+<button class="p-1 text-orange-500 hover:text-orange-600 hover:bg-orange-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-user-add-line"></i>
+</div>
+</button>
+<button class="p-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-alarm-warning-line"></i>
+</div>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<button class="flex items-center space-x-1 px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 !rounded-button whitespace-nowrap">
+<span>Bulk Actions</span>
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+<span class="text-sm text-gray-600">7 of 32 rows selected</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="text-sm text-gray-600">Rows per page:</span>
+<div class="relative">
+<select class="appearance-none pl-3 pr-8 py-1 text-sm border border-gray-300 rounded-md text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
+<option>10</option>
+<option selected>20</option>
+<option>50</option>
+<option>100</option>
+</select>
+<div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+<div class="w-4 h-4 flex items-center justify-center text-gray-500">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</div>
+</div>
+<div class="flex items-center space-x-1">
+<button class="p-1 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+<div class="w-6 h-6 flex items-center justify-center">
+<i class="ri-arrow-left-s-line"></i>
+</div>
+</button>
+<span class="text-sm text-gray-600">Page 1 of 2</span>
+<button class="p-1 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+<div class="w-6 h-6 flex items-center justify-center">
+<i class="ri-arrow-right-s-line"></i>
+</div>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Recently Resolved Alarms -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-6">
+<div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+<h2 class="text-base font-medium text-gray-800">Recently Resolved Alarms</h2>
+<button class="text-xs text-primary hover:text-primary/80 font-medium !rounded-button whitespace-nowrap">View All History</button>
+</div>
+<div class="overflow-x-auto">
+<table class="min-w-full divide-y divide-gray-200">
+<thead class="bg-gray-50">
+<tr>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alarm ID</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resolved At</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resolved By</th>
+<th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="bg-white divide-y divide-gray-200">
+<tr>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Critical</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">ALM-2025-0421</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Network equipment power failure</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Khartoum Central #1</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Apr 9, 2025 01:15:32</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">3h 42m</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Ahmed Hassan</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+<div class="flex items-center space-x-2">
+<button class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-file-list-line"></i>
+</div>
+</button>
+<button class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-restart-line"></i>
+</div>
+</button>
+</div>
+</td>
+</tr>
+<tr>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Major</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">ALM-2025-0420</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Transmission path degradation</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Port Sudan #9</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Apr 8, 2025 23:47:18</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">5h 12m</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Fatima Ahmed</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+<div class="flex items-center space-x-2">
+<button class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-file-list-line"></i>
+</div>
+</button>
+<button class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-restart-line"></i>
+</div>
+</button>
+</div>
+</td>
+</tr>
+<tr>
+<td class="px-4 py-3 whitespace-nowrap">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Minor</span>
+</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">ALM-2025-0419</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Fan unit malfunction in equipment cabinet</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">El Obeid #3</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Apr 8, 2025 22:31:05</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">2h 15m</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">Mohammed Ali</td>
+<td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+<div class="flex items-center space-x-2">
+<button class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-file-list-line"></i>
+</div>
+</button>
+<button class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-restart-line"></i>
+</div>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Alarm Management Toolbar -->
+<div class="fixed bottom-6 right-6">
+<div class="bg-white rounded-lg shadow-lg border border-gray-200 p-3">
+<div class="flex items-center space-x-2">
+<button class="flex items-center space-x-1 px-3 py-2 bg-primary text-white rounded-md text-sm hover:bg-primary/90 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-check-double-line"></i>
+</div>
+<span>Resolve Selected</span>
+</button>
+<button class="flex items-center space-x-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-user-add-line"></i>
+</div>
+<span>Assign</span>
+</button>
+<button class="flex items-center space-x-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-notification-3-line"></i>
+</div>
+<span>Escalate</span>
+</button>
+<button class="p-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-more-2-fill"></i>
+</div>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Status Bar -->
+<footer class="bg-white border-t border-gray-200 px-6 py-2">
+<div class="flex items-center justify-between">
+<div class="text-xs text-gray-500">© 2025 Sudan Fiber GIS Monitoring System</div>
+<div class="flex items-center space-x-4">
+<div class="flex items-center space-x-1">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="text-xs text-gray-600">API: Connected</span>
+</div>
+<div class="flex items-center space-x-1">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="text-xs text-gray-600">Database: Online</span>
+</div>
+<div class="flex items-center space-x-1">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="text-xs text-gray-600">NMS Feed: Active</span>
+</div>
+</div>
+<div class="text-xs text-gray-500">Version 2.4.1</div>
+</div>
+</footer>
+</div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Dropdown Toggles
+const dropdownToggles = {
+'severity-filter-btn': 'severity-filter-dropdown',
+'region-filter-btn': 'region-filter-dropdown',
+'status-filter-btn': 'status-filter-dropdown',
+'time-filter-btn': 'time-filter-dropdown',
+'settings-button': 'settings-dropdown',
+'team-button': 'team-dropdown'
+};
+Object.entries(dropdownToggles).forEach(([buttonId, dropdownId]) => {
+const button = document.getElementById(buttonId);
+const dropdown = document.getElementById(dropdownId);
+if (button && dropdown) {
+button.addEventListener('click', function(e) {
+e.stopPropagation();
+dropdown.classList.toggle('hidden');
+// Hide other dropdowns
+Object.values(dropdownToggles).forEach(id => {
+if (id !== dropdownId) {
+const otherDropdown = document.getElementById(id);
+if (otherDropdown) otherDropdown.classList.add('hidden');
+}
+});
+});
+}
+});
+// Close dropdowns when clicking outside
+document.addEventListener('click', function() {
+Object.values(dropdownToggles).forEach(id => {
+const dropdown = document.getElementById(id);
+if (dropdown) dropdown.classList.add('hidden');
+});
+});
+// Select All Checkbox
+const selectAllCheckbox = document.getElementById('select-all');
+if (selectAllCheckbox) {
+selectAllCheckbox.addEventListener('change', function() {
+const checkboxes = document.querySelectorAll('tbody .custom-checkbox input[type="checkbox"]');
+checkboxes.forEach(checkbox => {
+checkbox.checked = selectAllCheckbox.checked;
+});
+});
+}
+// Initialize Charts
+// Total Alarms Trend Chart
+const totalAlarmsTrendChart = echarts.init(document.getElementById('total-alarms-trend-chart'));
+totalAlarmsTrendChart.setOption({
+animation: false,
+grid: { top: 0, right: 0, bottom: 0, left: 0 },
+xAxis: { show: false, type: 'category', data: [1, 2, 3, 4, 5, 6, 7] },
+yAxis: { show: false, type: 'value' },
+series: [{
+data: [18, 22, 25, 20, 24, 28, 32],
+type: 'line',
+showSymbol: false,
+lineStyle: { color: 'rgba(87, 181, 231, 1)' },
+areaStyle: { color: 'rgba(87, 181, 231, 0.1)' }
+}]
+});
+// Critical Alarms Trend Chart
+const criticalAlarmsTrendChart = echarts.init(document.getElementById('critical-alarms-trend-chart'));
+criticalAlarmsTrendChart.setOption({
+animation: false,
+grid: { top: 0, right: 0, bottom: 0, left: 0 },
+xAxis: { show: false, type: 'category', data: [1, 2, 3, 4, 5, 6, 7] },
+yAxis: { show: false, type: 'value' },
+series: [{
+data: [3, 4, 3, 5, 4, 5, 7],
+type: 'line',
+showSymbol: false,
+lineStyle: { color: 'rgba(252, 141, 98, 1)' },
+areaStyle: { color: 'rgba(252, 141, 98, 0.1)' }
+}]
+});
+// Last 24h Alarms Trend Chart
+const last24hAlarmsTrendChart = echarts.init(document.getElementById('last24h-alarms-trend-chart'));
+last24hAlarmsTrendChart.setOption({
+animation: false,
+grid: { top: 0, right: 0, bottom: 0, left: 0 },
+xAxis: { show: false, type: 'category', data: [1, 2, 3, 4, 5, 6, 7] },
+yAxis: { show: false, type: 'value' },
+series: [{
+data: [24, 22, 20, 19, 21, 18, 18],
+type: 'line',
+showSymbol: false,
+lineStyle: { color: 'rgba(251, 191, 114, 1)' },
+areaStyle: { color: 'rgba(251, 191, 114, 0.1)' }
+}]
+});
+// Resolution Time Trend Chart
+const resolutionTimeTrendChart = echarts.init(document.getElementById('resolution-time-trend-chart'));
+resolutionTimeTrendChart.setOption({
+animation: false,
+grid: { top: 0, right: 0, bottom: 0, left: 0 },
+xAxis: { show: false, type: 'category', data: [1, 2, 3, 4, 5, 6, 7] },
+yAxis: { show: false, type: 'value' },
+series: [{
+data: [5.8, 5.4, 5.1, 4.9, 4.6, 4.3, 4.2],
+type: 'line',
+showSymbol: false,
+lineStyle: { color: 'rgba(141, 211, 199, 1)' },
+areaStyle: { color: 'rgba(141, 211, 199, 0.1)' }
+}]
+});
+// Alarm Severity Chart
+const alarmSeverityChart = echarts.init(document.getElementById('alarm-severity-chart'));
+alarmSeverityChart.setOption({
+animation: false,
+tooltip: {
+trigger: 'item',
+backgroundColor: 'rgba(255, 255, 255, 0.9)',
+borderColor: '#e5e7eb',
+textStyle: { color: '#1f2937' }
+},
+legend: {
+orient: 'horizontal',
+bottom: 0,
+textStyle: { color: '#1f2937' }
+},
+series: [{
+name: 'Alarm Severity',
+type: 'pie',
+radius: ['40%', '70%'],
+avoidLabelOverlap: false,
+itemStyle: {
+borderRadius: 8,
+borderColor: '#fff',
+borderWidth: 2
+},
+label: { show: false },
+labelLine: { show: false },
+data: [
+{ value: 7, name: 'Critical', itemStyle: { color: 'rgba(252, 141, 98, 1)' } },
+{ value: 12, name: 'Major', itemStyle: { color: 'rgba(251, 191, 114, 1)' } },
+{ value: 8, name: 'Minor', itemStyle: { color: 'rgba(141, 211, 199, 1)' } },
+{ value: 5, name: 'Warning', itemStyle: { color: 'rgba(87, 181, 231, 1)' } }
+]
+}]
+});
+// Alarm Trend Chart
+const alarmTrendChart = echarts.init(document.getElementById('alarm-trend-chart'));
+alarmTrendChart.setOption({
+animation: false,
+tooltip: {
+trigger: 'axis',
+backgroundColor: 'rgba(255, 255, 255, 0.9)',
+borderColor: '#e5e7eb',
+textStyle: { color: '#1f2937' }
+},
+legend: {
+data: ['Critical', 'Major', 'Minor', 'Warning'],
+bottom: 0,
+textStyle: { color: '#1f2937' }
+},
+grid: { left: '3%', right: '4%', bottom: '15%', top: '3%', containLabel: true },
+xAxis: {
+type: 'category',
+boundaryGap: false,
+data: ['Apr 3', 'Apr 4', 'Apr 5', 'Apr 6', 'Apr 7', 'Apr 8', 'Apr 9'],
+axisLabel: { color: '#1f2937' }
+},
+yAxis: {
+type: 'value',
+axisLabel: { color: '#1f2937' }
+},
+series: [
+{
+name: 'Critical',
+type: 'line',
+stack: 'Total',
+data: [3, 4, 3, 5, 4, 5, 7],
+lineStyle: { color: 'rgba(252, 141, 98, 1)' },
+areaStyle: { color: 'rgba(252, 141, 98, 0.1)' },
+showSymbol: false,
+smooth: true
+},
+{
+name: 'Major',
+type: 'line',
+stack: 'Total',
+data: [8, 9, 10, 8, 9, 11, 12],
+lineStyle: { color: 'rgba(251, 191, 114, 1)' },
+areaStyle: { color: 'rgba(251, 191, 114, 0.1)' },
+showSymbol: false,
+smooth: true
+},
+{
+name: 'Minor',
+type: 'line',
+stack: 'Total',
+data: [6, 7, 5, 6, 7, 8, 8],
+lineStyle: { color: 'rgba(141, 211, 199, 1)' },
+areaStyle: { color: 'rgba(141, 211, 199, 0.1)' },
+showSymbol: false,
+smooth: true
+},
+{
+name: 'Warning',
+type: 'line',
+stack: 'Total',
+data: [4, 3, 5, 4, 3, 4, 5],
+lineStyle: { color: 'rgba(87, 181, 231, 1)' },
+areaStyle: { color: 'rgba(87, 181, 231, 0.1)' },
+showSymbol: false,
+smooth: true
+}
+]
+});
+// Handle window resize
+window.addEventListener('resize', function() {
+totalAlarmsTrendChart.resize();
+criticalAlarmsTrendChart.resize();
+last24hAlarmsTrendChart.resize();
+resolutionTimeTrendChart.resize();
+alarmSeverityChart.resize();
+alarmTrendChart.resize();
+});
+});
+</script>
+</body>
+</html>

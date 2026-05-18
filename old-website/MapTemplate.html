@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Node Map | Sudan Fiber GIS Dashboard</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>tailwind.config={theme:{extend:{colors:{primary:'#3b82f6',secondary:'#64748b'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<style>
+:where([class^="ri-"])::before { content: "\f3c2"; }
+body {
+font-family: 'Inter', sans-serif;
+background-color: #f9fafb;
+}
+.custom-scrollbar::-webkit-scrollbar {
+width: 6px;
+height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+background: #f1f1f1;
+border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+background: #c1c1c1;
+border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+background: #a1a1a1;
+}
+.custom-switch {
+position: relative;
+display: inline-block;
+width: 44px;
+height: 24px;
+}
+.custom-switch input {
+opacity: 0;
+width: 0;
+height: 0;
+}
+.switch-slider {
+position: absolute;
+cursor: pointer;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background-color: #e5e7eb;
+transition: .4s;
+border-radius: 24px;
+}
+.switch-slider:before {
+position: absolute;
+content: "";
+height: 18px;
+width: 18px;
+left: 3px;
+bottom: 3px;
+background-color: white;
+transition: .4s;
+border-radius: 50%;
+}
+input:checked + .switch-slider {
+background-color: #3b82f6;
+}
+input:checked + .switch-slider:before {
+transform: translateX(20px);
+}
+.custom-range {
+-webkit-appearance: none;
+width: 100%;
+height: 6px;
+border-radius: 5px;
+background: #e5e7eb;
+outline: none;
+}
+.custom-range::-webkit-slider-thumb {
+-webkit-appearance: none;
+appearance: none;
+width: 16px;
+height: 16px;
+border-radius: 50%;
+background: #3b82f6;
+cursor: pointer;
+}
+.custom-checkbox {
+position: relative;
+display: inline-block;
+width: 18px;
+height: 18px;
+}
+.custom-checkbox input {
+opacity: 0;
+width: 0;
+height: 0;
+}
+.checkbox-mark {
+position: absolute;
+top: 0;
+left: 0;
+height: 18px;
+width: 18px;
+background-color: #fff;
+border: 2px solid #d1d5db;
+border-radius: 4px;
+}
+.custom-checkbox input:checked ~ .checkbox-mark {
+background-color: #3b82f6;
+border-color: #3b82f6;
+}
+.checkbox-mark:after {
+content: "";
+position: absolute;
+display: none;
+}
+.custom-checkbox input:checked ~ .checkbox-mark:after {
+display: block;
+}
+.custom-checkbox .checkbox-mark:after {
+left: 5px;
+top: 2px;
+width: 5px;
+height: 10px;
+border: solid white;
+border-width: 0 2px 2px 0;
+transform: rotate(45deg);
+}
+.custom-radio {
+position: relative;
+display: inline-block;
+width: 18px;
+height: 18px;
+}
+.custom-radio input {
+opacity: 0;
+width: 0;
+height: 0;
+}
+.radio-mark {
+position: absolute;
+top: 0;
+left: 0;
+height: 18px;
+width: 18px;
+background-color: #fff;
+border: 2px solid #d1d5db;
+border-radius: 50%;
+}
+.custom-radio input:checked ~ .radio-mark {
+border-color: #3b82f6;
+}
+.radio-mark:after {
+content: "";
+position: absolute;
+display: none;
+}
+.custom-radio input:checked ~ .radio-mark:after {
+display: block;
+}
+.custom-radio .radio-mark:after {
+top: 3px;
+left: 3px;
+width: 8px;
+height: 8px;
+border-radius: 50%;
+background: #3b82f6;
+}
+.node-normal {
+background-color: rgba(34, 197, 94, 0.9);
+}
+.node-warning {
+background-color: rgba(234, 179, 8, 0.9);
+}
+.node-critical {
+background-color: rgba(239, 68, 68, 0.9);
+}
+.node-inactive {
+background-color: rgba(107, 114, 128, 0.9);
+}
+.map-controls button {
+background-color: white;
+border-radius: 4px;
+width: 32px;
+height: 32px;
+display: flex;
+align-items: center;
+justify-content: center;
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.map-controls button:hover {
+background-color: #f3f4f6;
+}
+.node-marker {
+width: 14px;
+height: 14px;
+border-radius: 50%;
+border: 2px solid white;
+box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+cursor: pointer;
+transition: transform 0.2s;
+}
+.node-marker:hover {
+transform: scale(1.5);
+z-index: 10;
+}
+.node-pulse {
+position: absolute;
+width: 100%;
+height: 100%;
+border-radius: 50%;
+animation: pulse 2s infinite;
+background-color: inherit;
+opacity: 0;
+}
+@keyframes pulse {
+0% {
+transform: scale(1);
+opacity: 0.7;
+}
+70% {
+transform: scale(2);
+opacity: 0;
+}
+100% {
+transform: scale(2);
+opacity: 0;
+}
+}
+.status-badge {
+display: inline-flex;
+align-items: center;
+border-radius: 9999px;
+padding: 0.25rem 0.75rem;
+font-size: 0.75rem;
+font-weight: 500;
+}
+.status-active {
+background-color: rgba(34, 197, 94, 0.15);
+color: #15803d;
+}
+.status-warning {
+background-color: rgba(234, 179, 8, 0.15);
+color: #a16207;
+}
+.status-critical {
+background-color: rgba(239, 68, 68, 0.15);
+color: #b91c1c;
+}
+.status-inactive {
+background-color: rgba(107, 114, 128, 0.15);
+color: #4b5563;
+}
+</style>
+</head>
+<body>
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar -->
+<div class="w-64 bg-white shadow-lg z-10 flex flex-col">
+<div class="p-4 border-b border-gray-200 flex items-center space-x-2">
+<div class="w-8 h-8 flex items-center justify-center bg-primary rounded-full text-white">
+<i class="ri-global-line ri-lg"></i>
+</div>
+<span class="font-['Pacifico'] text-xl text-gray-800">GIS Monitor</span>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<div class="p-4">
+<div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Main</div>
+<nav>
+<a href="https://readdy.ai/home/bbe95eca-ede7-4dc6-9479-79f4c28f6ede/8c8a81d9-87a5-4265-987d-f4b078ea428c" data-readdy="true" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-dashboard-line"></i>
+</div>
+Dashboard
+</a>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md bg-primary bg-opacity-10 text-primary mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-map-pin-line"></i>
+</div>
+Node Map
+</a>
+<a href="https://readdy.ai/home/bbe95eca-ede7-4dc6-9479-79f4c28f6ede/3d4e18cb-32a6-43cc-a7ad-f887d6cef51d" data-readdy="true" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-alarm-warning-line"></i>
+</div>
+Alarms
+</a>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-bar-chart-line"></i>
+</div>
+Performance
+</a>
+</nav>
+</div>
+<div class="p-4">
+<div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Maintenance</div>
+<nav>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-tools-line"></i>
+</div>
+Work Orders
+</a>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-team-line"></i>
+</div>
+Field Teams
+</a>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-history-line"></i>
+</div>
+Incident History
+</a>
+</nav>
+</div>
+<div class="p-4">
+<div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Reports</div>
+<nav>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-file-chart-line"></i>
+</div>
+KPI Reports
+</a>
+<a href="#" class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 mb-1">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-projector-line"></i>
+</div>
+Project Status
+</a>
+</nav>
+</div>
+</div>
+<div class="p-4 border-t border-gray-200">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600">
+<i class="ri-user-line ri-lg"></i>
+</div>
+<div>
+<div class="text-sm font-medium text-gray-700">Ahmed Hassan</div>
+<div class="text-xs text-gray-500">NMS Team Lead</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Content -->
+<div class="flex-1 flex flex-col overflow-hidden">
+<!-- Top Header -->
+<header class="bg-white shadow-sm z-10">
+<div class="flex items-center justify-between px-6 py-3 border-b border-gray-200">
+<div class="flex items-center space-x-4">
+<h1 class="text-lg font-semibold text-gray-800">Network Node Map</h1>
+<div class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 flex items-center">
+<span class="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+Live Data
+</div>
+<div class="text-xs text-gray-500">Last update: April 9, 2025 - 10:23 AM</div>
+</div>
+<div class="flex items-center space-x-4">
+<div class="relative" id="team-dropdown-container">
+<button class="flex items-center space-x-1 text-sm font-medium text-gray-700 hover:text-gray-900 !rounded-button" id="team-button">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-user-settings-line"></i>
+</div>
+<span>NMS Team</span>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+<div id="team-dropdown" class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 hidden">
+<div class="p-3 border-b border-gray-200">
+<h3 class="text-sm font-medium text-gray-800">Team Selection</h3>
+</div>
+<div class="py-2">
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-team-line"></i>
+</div>
+<span>My Team</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-user-settings-line"></i>
+</div>
+<span>Team Management</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-arrow-left-right-line"></i>
+</div>
+<span>Switch Team</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-bar-chart-line"></i>
+</div>
+<span>Team Performance</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-settings-line"></i>
+</div>
+<span>Team Settings</span>
+</a>
+</div>
+</div>
+</div>
+<div class="w-px h-6 bg-gray-300"></div>
+<div class="relative">
+<button class="p-1 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+<div class="w-6 h-6 flex items-center justify-center">
+<i class="ri-notification-3-line"></i>
+</div>
+</button>
+<div class="absolute top-0 right-0 w-2 h-2 rounded-full bg-red-500"></div>
+</div>
+<div class="relative" id="settings-dropdown-container">
+<button class="p-1 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100" id="settings-button">
+<div class="w-6 h-6 flex items-center justify-center">
+<i class="ri-settings-3-line"></i>
+</div>
+</button>
+<div id="settings-dropdown" class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 hidden">
+<div class="p-3 border-b border-gray-200">
+<h3 class="text-sm font-medium text-gray-800">Settings</h3>
+</div>
+<div class="py-2">
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-user-settings-line"></i>
+</div>
+<span>User Preferences</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-computer-line"></i>
+</div>
+<span>Display Settings</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-notification-3-line"></i>
+</div>
+<span>Notification Settings</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-refresh-line"></i>
+</div>
+<span>Data Refresh Rate</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-map-2-line"></i>
+</div>
+<span>Map Configuration</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-translate-2"></i>
+</div>
+<span>Language Selection</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-palette-line"></i>
+</div>
+<span>Theme Options</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Map Control Toolbar -->
+<div class="px-6 py-2 flex items-center space-x-4 bg-white border-b border-gray-200">
+<div class="flex items-center space-x-2">
+<label class="text-sm font-medium text-gray-700">Status:</label>
+<div class="relative">
+<button class="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 !rounded-button whitespace-nowrap" id="status-filter-btn">
+<span>All Statuses</span>
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+<div id="status-filter-dropdown" class="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 hidden">
+<div class="p-2 space-y-1">
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Active</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Warning</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Critical</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Inactive</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<label class="text-sm font-medium text-gray-700">Region:</label>
+<div class="relative">
+<button class="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 !rounded-button whitespace-nowrap" id="region-filter-btn">
+<span>All Regions</span>
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+<div id="region-filter-dropdown" class="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 hidden">
+<div class="p-2 space-y-1">
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Khartoum</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Eastern</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Northern</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Western</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Southern</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<label class="text-sm font-medium text-gray-700">Node Type:</label>
+<div class="relative">
+<button class="flex items-center space-x-1 px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 !rounded-button whitespace-nowrap" id="type-filter-btn">
+<span>All Types</span>
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+<div id="type-filter-dropdown" class="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 hidden">
+<div class="p-2 space-y-1">
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Core</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Distribution</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Access</span>
+</label>
+<label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+<span class="custom-checkbox mr-2">
+<input type="checkbox" checked>
+<span class="checkbox-mark"></span>
+</span>
+<span class="text-sm text-gray-700">Customer</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<label class="text-sm font-medium text-gray-700">View:</label>
+<div class="flex items-center bg-gray-100 rounded-full p-1">
+<button class="px-3 py-1 text-xs font-medium rounded-full bg-white shadow-sm text-gray-800 !rounded-button whitespace-nowrap">Map</button>
+<button class="px-3 py-1 text-xs font-medium rounded-full text-gray-600 hover:bg-gray-50 !rounded-button whitespace-nowrap">Satellite</button>
+</div>
+</div>
+<div class="relative ml-auto">
+<div class="flex items-center border border-gray-300 rounded-md overflow-hidden">
+<input type="text" placeholder="Search nodes..." class="px-3 py-1.5 text-sm text-gray-700 border-none focus:outline-none focus:ring-0">
+<button class="px-3 py-1.5 bg-gray-50 text-gray-500 hover:text-gray-700 border-l border-gray-300">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-search-line"></i>
+</div>
+</button>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<div class="flex items-center space-x-1">
+<span class="text-sm text-gray-600">Auto-refresh:</span>
+<label class="custom-switch">
+<input type="checkbox" checked>
+<span class="switch-slider"></span>
+</label>
+<span class="text-sm text-gray-600">30s</span>
+</div>
+<a href="https://readdy.ai/home/bbe95eca-ede7-4dc6-9479-79f4c28f6ede/3d4e18cb-32a6-43cc-a7ad-f887d6cef51d" data-readdy="true" class="flex items-center space-x-1 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-alarm-warning-line"></i>
+</div>
+<span>Back to Alarms</span>
+</a>
+</div>
+</div>
+</header>
+<!-- Map Content -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Node List Panel -->
+<div class="w-80 bg-white border-r border-gray-200 flex flex-col z-10">
+<div class="p-4 border-b border-gray-200 flex items-center justify-between">
+<h2 class="text-sm font-medium text-gray-800">Network Nodes</h2>
+<div class="flex items-center space-x-1">
+<button class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-refresh-line"></i>
+</div>
+</button>
+<button class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-filter-line"></i>
+</div>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
+<div class="flex items-center space-x-4">
+<span class="flex items-center space-x-1">
+<span class="inline-block w-3 h-3 bg-green-500 rounded-full"></span>
+<span class="text-xs text-gray-600">Active (42)</span>
+</span>
+<span class="flex items-center space-x-1">
+<span class="inline-block w-3 h-3 bg-yellow-500 rounded-full"></span>
+<span class="text-xs text-gray-600">Warning (12)</span>
+</span>
+<span class="flex items-center space-x-1">
+<span class="inline-block w-3 h-3 bg-red-500 rounded-full"></span>
+<span class="text-xs text-gray-600">Critical (8)</span>
+</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<div class="divide-y divide-gray-200">
+<div class="p-3 hover:bg-gray-50 cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-medium text-gray-800">Khartoum Central #1</h3>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Critical</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs text-gray-500">Core Node</p>
+<p class="text-xs text-gray-500">ID: KRT-CN-001</p>
+</div>
+<div class="text-xs text-gray-500">3 Alarms</div>
+</div>
+</div>
+<div class="p-3 hover:bg-gray-50 cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-medium text-gray-800">Khartoum North #5</h3>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Critical</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs text-gray-500">Distribution Node</p>
+<p class="text-xs text-gray-500">ID: KRT-DN-005</p>
+</div>
+<div class="text-xs text-gray-500">2 Alarms</div>
+</div>
+</div>
+<div class="p-3 hover:bg-gray-50 cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-medium text-gray-800">Omdurman #8</h3>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Warning</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs text-gray-500">Distribution Node</p>
+<p class="text-xs text-gray-500">ID: OMD-DN-008</p>
+</div>
+<div class="text-xs text-gray-500">1 Alarm</div>
+</div>
+</div>
+<div class="p-3 hover:bg-gray-50 cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-medium text-gray-800">Port Sudan #12</h3>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Critical</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs text-gray-500">Core Node</p>
+<p class="text-xs text-gray-500">ID: PSD-CN-012</p>
+</div>
+<div class="text-xs text-gray-500">2 Alarms</div>
+</div>
+</div>
+<div class="p-3 hover:bg-gray-50 cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-medium text-gray-800">Kassala #8</h3>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Warning</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs text-gray-500">Distribution Node</p>
+<p class="text-xs text-gray-500">ID: KSL-DN-008</p>
+</div>
+<div class="text-xs text-gray-500">1 Alarm</div>
+</div>
+</div>
+<div class="p-3 hover:bg-gray-50 cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-medium text-gray-800">El Obeid #3</h3>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Warning</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs text-gray-500">Distribution Node</p>
+<p class="text-xs text-gray-500">ID: EOB-DN-003</p>
+</div>
+<div class="text-xs text-gray-500">1 Alarm</div>
+</div>
+</div>
+<div class="p-3 hover:bg-gray-50 cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-medium text-gray-800">Wad Madani #7</h3>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Warning</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs text-gray-500">Access Node</p>
+<p class="text-xs text-gray-500">ID: WMD-AN-007</p>
+</div>
+<div class="text-xs text-gray-500">1 Alarm</div>
+</div>
+</div>
+<div class="p-3 hover:bg-gray-50 cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-medium text-gray-800">Khartoum #2</h3>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Warning</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs text-gray-500">Access Node</p>
+<p class="text-xs text-gray-500">ID: KRT-AN-002</p>
+</div>
+<div class="text-xs text-gray-500">1 Alarm</div>
+</div>
+</div>
+<div class="p-3 hover:bg-gray-50 cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-medium text-gray-800">Nyala #4</h3>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Critical</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs text-gray-500">Core Node</p>
+<p class="text-xs text-gray-500">ID: NYL-CN-004</p>
+</div>
+<div class="text-xs text-gray-500">2 Alarms</div>
+</div>
+</div>
+<div class="p-3 hover:bg-gray-50 cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-medium text-gray-800">Al Fashir #6</h3>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs text-gray-500">Distribution Node</p>
+<p class="text-xs text-gray-500">ID: AFR-DN-006</p>
+</div>
+<div class="text-xs text-gray-500">0 Alarms</div>
+</div>
+</div>
+<div class="p-3 hover:bg-gray-50 cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-medium text-gray-800">Atbara #9</h3>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs text-gray-500">Access Node</p>
+<p class="text-xs text-gray-500">ID: ATB-AN-009</p>
+</div>
+<div class="text-xs text-gray-500">0 Alarms</div>
+</div>
+</div>
+<div class="p-3 hover:bg-gray-50 cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-sm font-medium text-gray-800">Dongola #11</h3>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs text-gray-500">Access Node</p>
+<p class="text-xs text-gray-500">ID: DNG-AN-011</p>
+</div>
+<div class="text-xs text-gray-500">0 Alarms</div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-3 border-t border-gray-200 bg-gray-50">
+<div class="flex items-center justify-between">
+<span class="text-xs text-gray-600">Showing 12 of 62 nodes</span>
+<div class="flex items-center space-x-1">
+<button class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-arrow-left-s-line"></i>
+</div>
+</button>
+<button class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-arrow-right-s-line"></i>
+</div>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Map Area -->
+<div class="flex-1 relative">
+<div class="absolute inset-0" style="background-image: url('https://public.readdy.ai/gen_page/map_placeholder_1280x720.png'); background-size: cover; background-position: center;"></div>
+<!-- Map Controls -->
+<div class="absolute top-4 right-4 map-controls flex flex-col space-y-2">
+<button title="Zoom In">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-zoom-in-line"></i>
+</div>
+</button>
+<button title="Zoom Out">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-zoom-out-line"></i>
+</div>
+</button>
+<button title="Reset View">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-refresh-line"></i>
+</div>
+</button>
+<button title="Full Screen">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-fullscreen-line"></i>
+</div>
+</button>
+<div class="w-px h-4 bg-gray-300 mx-auto"></div>
+<button title="Layers">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-layers-line"></i>
+</div>
+</button>
+<button title="Measure">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-ruler-line"></i>
+</div>
+</button>
+</div>
+<!-- Map Legend -->
+<div class="absolute bottom-4 left-4 bg-white rounded-lg shadow-md p-3 text-xs">
+<h3 class="font-medium text-gray-800 mb-2">Map Legend</h3>
+<div class="space-y-1.5">
+<div class="flex items-center space-x-2">
+<span class="inline-block w-3 h-3 bg-green-500 rounded-full"></span>
+<span class="text-gray-700">Active Node</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="inline-block w-3 h-3 bg-yellow-500 rounded-full"></span>
+<span class="text-gray-700">Warning Node</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="inline-block w-3 h-3 bg-red-500 rounded-full"></span>
+<span class="text-gray-700">Critical Node</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="inline-block w-3 h-3 bg-gray-500 rounded-full"></span>
+<span class="text-gray-700">Inactive Node</span>
+</div>
+<div class="pt-1 border-t border-gray-200 mt-1">
+<div class="flex items-center space-x-2">
+<span class="inline-block w-4 h-0.5 bg-blue-500"></span>
+<span class="text-gray-700">Fiber Link</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="inline-block w-4 h-0.5 bg-red-500"></span>
+<span class="text-gray-700">Degraded Link</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Node Markers -->
+<div class="absolute top-1/4 left-1/3">
+<div class="relative node-marker node-critical" id="node-krt-cn-001">
+<div class="node-pulse"></div>
+</div>
+</div>
+<div class="absolute top-1/4 left-2/5">
+<div class="relative node-marker node-critical" id="node-krt-dn-005">
+<div class="node-pulse"></div>
+</div>
+</div>
+<div class="absolute top-1/5 left-1/4">
+<div class="relative node-marker node-warning" id="node-omd-dn-008"></div>
+</div>
+<div class="absolute top-1/12 right-1/3">
+<div class="relative node-marker node-critical" id="node-psd-cn-012">
+<div class="node-pulse"></div>
+</div>
+</div>
+<div class="absolute top-1/4 right-1/4">
+<div class="relative node-marker node-warning" id="node-ksl-dn-008"></div>
+</div>
+<div class="absolute top-1/2 left-1/4">
+<div class="relative node-marker node-warning" id="node-eob-dn-003"></div>
+</div>
+<div class="absolute top-1/3 left-2/5">
+<div class="relative node-marker node-warning" id="node-wmd-an-007"></div>
+</div>
+<div class="absolute top-1/4 left-1/4">
+<div class="relative node-marker node-warning" id="node-krt-an-002"></div>
+</div>
+<div class="absolute bottom-1/4 left-1/3">
+<div class="relative node-marker node-critical" id="node-nyl-cn-004">
+<div class="node-pulse"></div>
+</div>
+</div>
+<div class="absolute bottom-1/3 left-1/5">
+<div class="relative node-marker node-normal" id="node-afr-dn-006"></div>
+</div>
+<div class="absolute top-1/3 right-1/3">
+<div class="relative node-marker node-normal" id="node-atb-an-009"></div>
+</div>
+<div class="absolute top-1/8 left-1/3">
+<div class="relative node-marker node-normal" id="node-dng-an-011"></div>
+</div>
+<!-- Node Details Panel (Initially Hidden) -->
+<div id="node-details-panel" class="absolute top-4 right-4 w-96 bg-white rounded-lg shadow-lg border border-gray-200 hidden">
+<div class="p-4 border-b border-gray-200 flex items-center justify-between">
+<h2 class="text-sm font-medium text-gray-800">Node Details</h2>
+<button id="close-node-details" class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-close-line"></i>
+</div>
+</button>
+</div>
+<div class="p-4">
+<div class="flex items-center justify-between mb-4">
+<div>
+<h3 class="text-lg font-semibold text-gray-800">Khartoum North #5</h3>
+<p class="text-sm text-gray-600">Distribution Node (KRT-DN-005)</p>
+</div>
+<span class="status-badge status-critical">Critical</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-4">
+<div>
+<h4 class="text-xs font-medium text-gray-500 uppercase mb-1">Status</h4>
+<p class="text-sm font-medium text-red-600">Critical - 2 Active Alarms</p>
+</div>
+<div>
+<h4 class="text-xs font-medium text-gray-500 uppercase mb-1">Last Updated</h4>
+<p class="text-sm text-gray-700">Apr 9, 2025 10:12 AM</p>
+</div>
+<div>
+<h4 class="text-xs font-medium text-gray-500 uppercase mb-1">Location</h4>
+<p class="text-sm text-gray-700">Khartoum North, Sudan</p>
+</div>
+<div>
+<h4 class="text-xs font-medium text-gray-500 uppercase mb-1">Coordinates</h4>
+<p class="text-sm text-gray-700">15.6445° N, 32.5531° E</p>
+</div>
+</div>
+<div class="mb-4">
+<h4 class="text-xs font-medium text-gray-500 uppercase mb-2">Active Alarms</h4>
+<div class="space-y-2">
+<div class="p-2 bg-red-50 border-l-4 border-red-500 rounded">
+<div class="flex items-center justify-between">
+<span class="text-sm font-medium text-red-800">Fiber cut detected on main backbone</span>
+<span class="text-xs text-red-600">Critical</span>
+</div>
+<p class="text-xs text-red-700 mt-1">Apr 9, 2025 08:42:13 (1h 41m)</p>
+</div>
+<div class="p-2 bg-orange-50 border-l-4 border-orange-500 rounded">
+<div class="flex items-center justify-between">
+<span class="text-sm font-medium text-orange-800">Power supply degradation</span>
+<span class="text-xs text-orange-600">Major</span>
+</div>
+<p class="text-xs text-orange-700 mt-1">Apr 9, 2025 09:15:22 (1h 08m)</p>
+</div>
+</div>
+</div>
+<div class="mb-4">
+<h4 class="text-xs font-medium text-gray-500 uppercase mb-2">Connected Links</h4>
+<div class="space-y-1">
+<div class="flex items-center justify-between">
+<span class="text-sm text-gray-700">Khartoum Central #1</span>
+<span class="text-xs px-2 py-0.5 bg-red-100 text-red-800 rounded-full">Degraded</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-sm text-gray-700">Omdurman #8</span>
+<span class="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded-full">Active</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-sm text-gray-700">Khartoum #2</span>
+<span class="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded-full">Active</span>
+</div>
+</div>
+</div>
+<div class="mb-4">
+<h4 class="text-xs font-medium text-gray-500 uppercase mb-2">Performance Metrics</h4>
+<div class="grid grid-cols-2 gap-3">
+<div class="p-2 bg-gray-50 rounded">
+<div class="text-xs text-gray-500 mb-1">CPU Usage</div>
+<div class="text-sm font-medium text-gray-800">78%</div>
+</div>
+<div class="p-2 bg-gray-50 rounded">
+<div class="text-xs text-gray-500 mb-1">Memory Usage</div>
+<div class="text-sm font-medium text-gray-800">64%</div>
+</div>
+<div class="p-2 bg-gray-50 rounded">
+<div class="text-xs text-gray-500 mb-1">Temperature</div>
+<div class="text-sm font-medium text-gray-800">42°C</div>
+</div>
+<div class="p-2 bg-gray-50 rounded">
+<div class="text-xs text-gray-500 mb-1">Uptime</div>
+<div class="text-sm font-medium text-gray-800">12d 8h 15m</div>
+</div>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<button class="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-primary text-white rounded-md text-sm hover:bg-primary/90 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-alarm-warning-line"></i>
+</div>
+<span>View Alarms</span>
+</button>
+<button class="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-bar-chart-line"></i>
+</div>
+<span>Performance</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Status Bar -->
+<footer class="bg-white border-t border-gray-200 px-6 py-2">
+<div class="flex items-center justify-between">
+<div class="text-xs text-gray-500">© 2025 Sudan Fiber GIS Monitoring System</div>
+<div class="flex items-center space-x-4">
+<div class="flex items-center space-x-1">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="text-xs text-gray-600">API: Connected</span>
+</div>
+<div class="flex items-center space-x-1">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="text-xs text-gray-600">Database: Online</span>
+</div>
+<div class="flex items-center space-x-1">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="text-xs text-gray-600">NMS Feed: Active</span>
+</div>
+</div>
+<div class="text-xs text-gray-500">Version 2.4.1</div>
+</div>
+</footer>
+</div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Dropdown Toggles
+const dropdownToggles = {
+'status-filter-btn': 'status-filter-dropdown',
+'region-filter-btn': 'region-filter-dropdown',
+'type-filter-btn': 'type-filter-dropdown',
+'settings-button': 'settings-dropdown',
+'team-button': 'team-dropdown'
+};
+
+Object.entries(dropdownToggles).forEach(([buttonId, dropdownId]) => {
+const button = document.getElementById(buttonId);
+const dropdown = document.getElementById(dropdownId);
+if (button && dropdown) {
+button.addEventListener('click', function(e) {
+e.stopPropagation();
+dropdown.classList.toggle('hidden');
+// Hide other dropdowns
+Object.values(dropdownToggles).forEach(id => {
+if (id !== dropdownId) {
+const otherDropdown = document.getElementById(id);
+if (otherDropdown) otherDropdown.classList.add('hidden');
+}
+});
+});
+}
+});
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function() {
+Object.values(dropdownToggles).forEach(id => {
+const dropdown = document.getElementById(id);
+if (dropdown) dropdown.classList.add('hidden');
+});
+});
+
+// Node marker click handlers
+const nodeMarkers = document.querySelectorAll('.node-marker');
+const nodeDetailsPanel = document.getElementById('node-details-panel');
+const closeNodeDetails = document.getElementById('close-node-details');
+
+nodeMarkers.forEach(marker => {
+marker.addEventListener('click', function() {
+nodeDetailsPanel.classList.remove('hidden');
+});
+});
+
+if (closeNodeDetails) {
+closeNodeDetails.addEventListener('click', function() {
+nodeDetailsPanel.classList.add('hidden');
+});
+}
+
+// Sample tooltip functionality for node markers
+nodeMarkers.forEach(marker => {
+marker.addEventListener('mouseenter', function(e) {
+const tooltip = document.createElement('div');
+tooltip.className = 'absolute z-50 bg-gray-900 text-white text-xs rounded py-1 px-2 -mt-8 -ml-12';
+tooltip.innerHTML = marker.id.replace('node-', '').toUpperCase() + ' - ' + 
+(marker.classList.contains('node-critical') ? 'Critical Alarms' : 
+marker.classList.contains('node-warning') ? 'Warning Alarms' : 'Normal Status');
+tooltip.style.whiteSpace = 'nowrap';
+marker.appendChild(tooltip);
+});
+
+marker.addEventListener('mouseleave', function() {
+const tooltip = marker.querySelector('div:last-child');
+if (tooltip && tooltip !== marker.querySelector('.node-pulse')) {
+marker.removeChild(tooltip);
+}
+});
+});
+
+// Simulate map loading
+setTimeout(() => {
+document.querySelectorAll('.node-marker').forEach(marker => {
+marker.style.opacity = '1';
+});
+}, 500);
+});
+</script>
+</body>
+</html>

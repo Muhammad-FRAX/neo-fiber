@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(office-hours)",
+      "Skill(office-hours:*)"
+    ]
+  }
+}
