@@ -813,11 +813,13 @@ A director can open the tool from a WhatsApp link, see a current cut's impact wi
 
 **WEEK 1 BLOCKERS (must answer before code starts):**
 
-1. **Network "root" for reachability (A2).** Which site(s) anchor the network for BFS? Reachability cannot run without at least one `is_root = true` site. Default seed: Khartoum HQ aggregation point as single root, then revise once a senior engineer confirms multi-root layout (likely Khartoum, Port Sudan, El Obeid, Nyala). Reachability treats "reached from ANY root" as UP.
-2. **DWH timezone (A8).** Confirm with the DWH owner what timezone `OccurrenceTime` is actually stored in (UTC? Africa/Khartoum? Naive local?). Match end-to-end. App DB stores `TIMESTAMPTZ` in UTC; UI displays `Africa/Khartoum` by default; the DWH→app boundary needs explicit conversion logic based on this answer.
-3. **LDAP server reachability from the deployment host.** If the host is air-gapped from LDAP too, we need a local-fallback auth mode (bcrypt-hashed passwords in the app DB for a small list of bootstrap users).
-4. **DWH refresh cadence.** How quickly does `dwh.fibergis_alarm_log` get new rows after an alarm fires upstream? If it's already 10+ minutes late, our 5-10 s polling doesn't matter much — we should know before optimizing.
-5. **Topology seed source.** Master Excel / OSS export of sites and links, or manual entry to start? The CSV importer (v1.0) handles either, but knowing now informs how much data we have for the wedge demo.
+> **All five RESOLVED in Phase 0 (2026-05-19) — see [docs/phase-0-answers.md](docs/phase-0-answers.md) for full text + implementation directives.**
+
+1. **Network "root" for reachability (A2).** Which site(s) anchor the network for BFS? Reachability cannot run without at least one `is_root = true` site. Default seed: Khartoum HQ aggregation point as single root, then revise once a senior engineer confirms multi-root layout (likely Khartoum, Port Sudan, El Obeid, Nyala). Reachability treats "reached from ANY root" as UP. — **RESOLVED Phase 0:** 3-4 heads exist; identities TBD. Seed empty, admin UI designates roots. See Phase 0 answers Q1.
+2. **DWH timezone (A8).** Confirm with the DWH owner what timezone `OccurrenceTime` is actually stored in (UTC? Africa/Khartoum? Naive local?). Match end-to-end. App DB stores `TIMESTAMPTZ` in UTC; UI displays `Africa/Khartoum` by default; the DWH→app boundary needs explicit conversion logic based on this answer. — **RESOLVED Phase 0:** Use DWH-native timestamps as-is, no conversion. Mirror columns use `TIMESTAMP WITHOUT TIME ZONE`. See Phase 0 answers Q2.
+3. **LDAP server reachability from the deployment host.** If the host is air-gapped from LDAP too, we need a local-fallback auth mode (bcrypt-hashed passwords in the app DB for a small list of bootstrap users). — **RESOLVED Phase 0:** LDAP reachable from deploy host; unreachable from CI. Production = pure LDAP; tests mock it. See Phase 0 answers Q3.
+4. **DWH refresh cadence.** How quickly does `dwh.fibergis_alarm_log` get new rows after an alarm fires upstream? If it's already 10+ minutes late, our 5-10 s polling doesn't matter much — we should know before optimizing. — **RESOLVED Phase 0:** 1-2 minutes. Poll interval default = 30s, not 5-10s. See Phase 0 answers Q4.
+5. **Topology seed source.** Master Excel / OSS export of sites and links, or manual entry to start? The CSV importer (v1.0) handles either, but knowing now informs how much data we have for the wedge demo. — **RESOLVED Phase 0:** None — admin UI fills it manually. Phase 11 is on v1.0 critical path. See Phase 0 answers Q5.
 
 **TASTE / NON-BLOCKING (resolved in design review):**
 
@@ -850,6 +852,8 @@ A director can open the tool from a WhatsApp link, see a current cut's impact wi
 ---
 
 ## 18. THE ASSIGNMENT
+
+> **COMPLETED in Phase 0 (2026-05-19).** Director quote: *"The impacted zones in the map."* This is direct validation of wedge §5 item 1 — the affected-region polygon is the v1.0 hero artifact. Full analysis: [docs/phase-0-answers.md](docs/phase-0-answers.md) §18.
 
 Before writing a single line of code, do this **one thing**:
 
@@ -990,11 +994,12 @@ Derived from this review. Run with Claude Code or Codex; checkbox as you ship.
   - Files: `backend/src/services/topology/reachability.ts`, `backend/src/services/topology/__tests__/reachability.test.ts`
   - Verify: `npm run test backend/src/services/topology`
 
-- [ ] **T2 (P1, human: ~30min / CC: ~10min)** — Schema — Add `is_root BOOLEAN` to `sites` table and seed Khartoum HQ as default root.
+- [ ] **T2 (P1, human: ~30min / CC: ~10min)** — Schema — Add `is_root BOOLEAN NOT NULL DEFAULT false` to `sites` table. **Do NOT seed a default root** — Phase 0 Q1 resolution: head identities are TBD; the admin UI designates roots. Seed file should not insert any rows.
 
   - Surfaced by: A2 — week-1 blocker
+  - Updated by: Phase 0 (2026-05-19) — owner does not know head identities; seed empty.
   - Files: `backend/db/migrations/0001_init.sql`, `backend/db/seed.sql`
-  - Verify: query for `SELECT * FROM sites WHERE is_root = true` returns ≥1 row.
+  - Verify: schema migration applies cleanly; `sites` table exists with `is_root` column; no rows pre-seeded.
 
 - [ ] **T3 (P1, human: ~1h / CC: ~15min)** — PMTiles — Confirm Express static middleware serves Range requests; write smoke test asserting `curl -H 'Range: bytes=0-15' /tiles/sudan.pmtiles` returns 206.
 
@@ -1137,16 +1142,18 @@ listed in the PR description, not a CI gate.
 
 ### Phase 0 — Human prep (no AI work)
 
+> **STATUS: COMPLETE (2026-05-19).** All deliverables captured in [docs/phase-0-answers.md](docs/phase-0-answers.md). Gate CLEAR — Phase 1 unblocked.
+
 **Goal:** unblock the 5 week-1 questions before any code is written. Answer the §18 assignment.
 
 **Deliverables (you, not the AI):**
 
-- §15 Q1: a named site marked `is_root = true` (e.g., Khartoum HQ).
-- §15 Q2: DWH `OccurrenceTime` confirmed timezone (UTC or Africa/Khartoum).
-- §15 Q3: LDAP reachability from the deployment host (yes/no + fallback decision).
-- §15 Q4: rough DWH new-row latency in seconds.
-- §15 Q5: pointer to whatever topology data exists (CSV, Excel, "none — start empty").
-- §18: a one-paragraph quote from one director answering "what's the FIRST thing you want to see in the next 60 seconds when a cut happens?"
+- §15 Q1: a named site marked `is_root = true` (e.g., Khartoum HQ). — ✅ Resolved (seed empty; admin UI designates roots).
+- §15 Q2: DWH `OccurrenceTime` confirmed timezone (UTC or Africa/Khartoum). — ✅ Resolved (use DWH-native, no conversion).
+- §15 Q3: LDAP reachability from the deployment host (yes/no + fallback decision). — ✅ Resolved (reachable from deploy host; CI mocks).
+- §15 Q4: rough DWH new-row latency in seconds. — ✅ Resolved (1-2 min; poll default 30s).
+- §15 Q5: pointer to whatever topology data exists (CSV, Excel, "none — start empty"). — ✅ Resolved (none; admin UI fills manually).
+- §18: a one-paragraph quote from one director answering "what's the FIRST thing you want to see in the next 60 seconds when a cut happens?" — ✅ Resolved ("The impacted zones in the map.").
 
 **Gate:** all five answered + the director quote in hand → start Phase 1. Don't compress this step.
 
