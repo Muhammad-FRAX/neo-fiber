@@ -1,0 +1,10 @@
+-- 0001_init.down.sql — rolls back 0001_init.sql
+DROP TABLE IF EXISTS saved_views       CASCADE;
+DROP TABLE IF EXISTS incident_notes    CASCADE;
+DROP TABLE IF EXISTS alarm_acks        CASCADE;
+DROP TABLE IF EXISTS topology_audit    CASCADE;
+DROP TABLE IF EXISTS alternate_paths   CASCADE;
+DROP TABLE IF EXISTS links             CASCADE;
+DROP TABLE IF EXISTS devices           CASCADE;
+DROP TABLE IF EXISTS sites             CASCADE;
+DROP TABLE IF EXISTS users             CASCADE;
