@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Skill(office-hours)",
-      "Skill(office-hours:*)"
+      "Skill(office-hours:*)",
+      "Skill(using-superpowers)",
+      "Skill(using-superpowers:*)",
+      "Skill(superpowers:executing-plans)",
+      "Skill(superpowers:executing-plans:*)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(gh auth *)"
     ]
   }
 }
