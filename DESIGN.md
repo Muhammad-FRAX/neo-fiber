@@ -752,6 +752,36 @@ Per the test-review IRON RULE: these are not optional and not deferrable. They'r
 
 **CI**: GitHub Actions (or your internal CI) runs lint + unit + integration + E2E on every push. Migration drift check: a job that builds a fresh DB from migrations and diffs it against the live schema dump.
 
+### CI verification reality (for GitHub-Actions Claude agents)
+
+When a phase is executed by a remote Claude Code agent triggered from a GitHub
+issue (`@claude` on an issue or PR), the runner is a clean Ubuntu container in
+GitHub's cloud. It **cannot reach**:
+
+- The real Zain Sudan DWH Postgres
+- The real LDAP server
+- Any internal `172.18.x.x` address
+- The deployment VM
+
+So §28 verify steps that look like `curl http://localhost:5000/api/v1/health`
+expecting live DB connectivity will NOT pass in CI. The agent must substitute:
+
+| Live service                            | CI fallback                                                                                                                              |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| DWH Postgres                            | **testcontainers** + a fixture schema mirroring `dwh.fibergis_alarm_log`, seeded with sample rows from `old-website/database sample.txt` |
+| LDAP server                             | `ldap-server-mock` npm container in tests, OR run with `AUTH_LOCAL_ONLY=true` and bcrypt-hashed test users in the app DB                 |
+| App Postgres                            | **testcontainers** (`postgis/postgis:16-3.4-alpine`) — works fine in Actions runners, Docker is available                                |
+| PMTiles HTTP Range                      | local file via `express.static` — works identically in CI                                                                                |
+| Real-time end-to-end (alarm → SSE → UI) | testcontainers-fed events through the event bus; Playwright asserts the UI update                                                        |
+
+**Acceptance criteria for "phase complete in CI":**
+
+- Backend phases: `npm test` green, integration tests pass against testcontainers, lint clean, typecheck clean.
+- Frontend phases: `npm test` green, Playwright passes against `npm run dev` + a mocked backend, axe-core clean.
+- The §14 acceptance bullets that depend on live services (alarm row → visual update ≤ 15 s end-to-end, `docker compose up` on a no-internet machine, real-director-uses-it) are **explicit handoff items the repo owner runs on a real host**, not gates the CI agent owns. The agent's PR should note these as "deferred to local verification" with the exact command for the owner to run.
+
+**What the agent should do when blocked:** if a verify step genuinely cannot be substituted (e.g., proving LDAP works against the real Active Directory server), commit the code with the CI-substitute test passing, and leave a clear `CONTINUATION.md` block in the PR titled "Local verification required" listing the exact command the repo owner needs to run on their machine. Don't pretend it's verified.
+
 ## 13. Distribution plan
 
 - **Build artifact:** single `docker compose up` that pulls/builds two images (app, app-db) and starts them.
@@ -868,6 +898,17 @@ The following were considered and explicitly left out of v1.0:
 - **Auth refresh tokens** (locked in A4). Hard kick to login on JWT expiry is the v1.0 behavior.
 
 ## 21. What already exists (reuse map)
+
+**"Port" here means "use as a working reference for behavior, then rewrite cleanly."**
+The `old-website/` code works — that's why it's valuable — but it isn't clean. It
+has ad-hoc filter strings instead of Zod, no standardized error response shape, no
+`request_id` correlation in logs, mixed concerns inside controllers, and React 17
+patterns that don't fit React 19. When porting, **study the old flow to understand
+the behavior** (the LDAP bind sequence, the alarm filter logic, the severity
+ordering, the lat/lng for the initial map view), **then write the new file from
+scratch** using the §9 conventions (API shape A7, error handler B1, logging B4,
+auth A4, token system P5, etc.). Copy-paste is not the goal. Behavior parity plus
+clean code is.
 
 The `old-website/` folder is the inheritance — port these, don't re-derive:
 
@@ -1085,6 +1126,13 @@ Run phases sequentially. Do not skip ahead — each phase's verification gates t
 
 **Context budget legend:** S = light (read 1-2 sections), M = medium (read 3-4 sections), L = heavy (read 5+ sections). Stay under L per phase.
 
+**For GitHub-Actions agents (`@claude` on issues):** the runner cannot reach the
+real DWH, LDAP, or any internal Zain network address. Verify steps that depend on
+live services must be substituted with testcontainers + mocks per **§12.5 → CI
+verification reality**. The fully-live `docker compose up` test only makes sense
+on the repo owner's laptop or the deployment VM, and is an explicit handoff item
+listed in the PR description, not a CI gate.
+
 ---
 
 ### Phase 0 — Human prep (no AI work)
@@ -1121,7 +1169,7 @@ Run phases sequentially. Do not skip ahead — each phase's verification gates t
 - `backend/src/middleware/error-handler.ts` — AppError class + global handler (T7 backend half)
 - `backend/src/routes/health.ts` — `/api/v1/health` returns DB connectivity status
 - `backend/package.json` — `npm run migrate`, `migrate:down` scripts (T10)
-- `docker-compose.yaml` — app + app-db (postgis/postgis:16) containers
+- `docker-compose.dev.yaml` — **DEV-ONLY**, runs just the `app-db` service (`postgis/postgis:16-3.4-alpine`). The app itself runs locally via `npm run dev`. Production Dockerfile is deferred to Phase 9 — there's no point building a shippable image until the app actually does something.
 - `.env.example`
 
 **Tasks closed:** T2, T5, T7 (backend), T10, T11
@@ -1397,9 +1445,14 @@ npm test tests/integration/n-plus-one
 
 - `tests/e2e/login.spec.ts`, `map-cut.spec.ts`, `detail-modal.spec.ts`, `offline-bundle.spec.ts`
 - `playwright.config.ts` with axe-core plugin
-- `Dockerfile` — multi-stage: build frontend → copy dist + tiles → run as `node`
-- `docker-compose.yaml` — finalize app + app-db
-- `README.md` updates with offline build flow (`docker save` / `docker load`)
+- **`Dockerfile`** (the production artifact, deferred from Phase 1 on purpose):
+  - Stage 1 `frontend-build`: `node:20-alpine`, install + `vite build` → `/app/frontend/dist`
+  - Stage 2 `backend-build`: install + bundle backend (esbuild or tsc) → `/app/backend/dist`
+  - Stage 3 `runtime`: `node:20-alpine` (slim), copy backend dist + frontend dist + bundled assets (fonts, icons, **sudan.pmtiles as the very last COPY layer per D2**) → `CMD ["node", "backend/dist/server.js"]`
+  - Runs as a non-root `node` user. No build tools or NPM cache in the final image.
+- **`docker-compose.yaml`** (production, separate from `docker-compose.dev.yaml`): `app` service built from the Dockerfile + `app-db` service. One file the operator runs with `docker compose up`. DWH connection comes from `.env`.
+- `README.md` — offline build flow: build on a connected machine, `docker save neo-fiber:vX.Y.Z | gzip > neo-fiber.tar.gz`, `scp` to the target, `docker load`. Step-by-step so it can be handed to an ops person.
+- Smoke test: pull the saved image onto a machine with no internet, `docker compose up`, verify everything works end-to-end.
 
 **Verify (all §14 acceptance criteria):**
 
