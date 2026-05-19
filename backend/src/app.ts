@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import { requestContext } from './middleware/request-context.js';
 import { errorHandler } from './middleware/error-handler.js';
 import healthRouter from './routes/health.js';
+import authRouter from './routes/auth.js';
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -48,6 +49,7 @@ export function createApp(): express.Express {
   app.use(requestContext);
 
   app.use('/api/v1', healthRouter);
+  app.use('/api/v1/auth', authRouter);
 
   // 404 handler for unknown routes
   app.use((_req, res) => {
