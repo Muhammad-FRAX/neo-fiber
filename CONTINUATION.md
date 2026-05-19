@@ -109,3 +109,80 @@ Once local verification passes (tests green, type-check clean, curl output as ab
 
 Also: update `.claude/settings.json` to add `"Bash(npm *)"` to the allow list
 so future Claude sessions can run npm install without blocking.
+
+
+
+update: from me the developer:
+i ran npm install and then npm test in the backend and got this result from the tests
+
+
+
+ RUN  v3.2.4 N:/backend
+
+ ✓ src/services/dwh/__tests__/alarm-resolver.test.ts (10 tests) 15ms
+ ❯ src/services/dwh/__tests__/poller.test.ts (7 tests | 1 failed) 2151ms
+   ✓ DwhPoller > publishes alarm event on first tick  2140ms
+   ✓ DwhPoller > isFiberCut=false when alarm name does not match 1ms
+   ✓ DwhPoller > isFiberCut=false when fiberCutAlarmName is empty string (safe default) 1ms        
+   ✓ DwhPoller > resolvedLinkId=null for unresolvable alarm row 1ms
+   ✓ DwhPoller > advances lastSeen cursor to prevent re-publishing 1ms
+   × DwhPoller > uses exponential backoff: 1s → 2s → reset on success 4ms
+     → expected "spy" to be called 2 times, but got 3 times
+   ✓ DwhPoller > stop() halts polling — no further ticks after stop 1ms
+ ✓ tests/unit/auth/jwt.test.ts (4 tests) 3268ms
+   ✓ signToken / verifyToken > signs a token that can be verified  2140ms
+   ✓ signToken / verifyToken > throws on an expired token (TTL=1s)  1118ms
+ ❯ tests/integration/auth.test.ts (11 tests | 11 skipped) 106ms
+   ↓ POST /api/v1/auth/login > returns 400 for empty username
+   ↓ POST /api/v1/auth/login > returns 400 for username with spaces
+   ↓ POST /api/v1/auth/login > returns 400 for missing password
+   ↓ POST /api/v1/auth/login > returns 401 for wrong password
+   ↓ POST /api/v1/auth/login > returns 401 for unknown user
+   ↓ POST /api/v1/auth/login > returns 200 with token + user for valid credentials
+   ↓ POST /api/v1/auth/logout > returns 200 with message
+   ↓ GET /api/v1/auth/me > returns 401 with no token
+   ↓ GET /api/v1/auth/me > returns 401 with malformed token
+   ↓ GET /api/v1/auth/me > returns 401 with expired token
+   ↓ GET /api/v1/auth/me > returns 200 with user data for a valid token
+ ❯ tests/integration/health.test.ts (6 tests | 6 skipped) 103ms
+   ↓ GET /api/v1/health > returns 200 with connected status when both pools are up
+   ↓ GET /api/v1/health > returns 404 for unknown routes
+   ↓ Schema migration > creates expected tables
+   ↓ Schema migration > sites table has is_root column (T2)
+   ↓ Schema migration > sites table starts empty (no pre-seeded root — Phase 0 Q1)
+   ↓ Schema migration > postgis extension is enabled
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Failed Suites 2 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/auth.test.ts [ tests/integration/auth.test.ts ]
+Error: Could not find a working container runtime strategy
+ ❯ getContainerRuntimeClient D:/BI/Research & Projects/Neo-Fiber/neo-fiber/backend/node_modules/testcontainers/src/container-runtime/clients/client.ts:63:9
+ ❯ PostgreSqlContainer.start D:/BI/Research & Projects/Neo-Fiber/neo-fiber/backend/node_modules/testcontainers/src/generic-container/generic-container.ts:86:20
+ ❯ PostgreSqlContainer.start D:/BI/Research & Projects/Neo-Fiber/neo-fiber/backend/node_modules/@testcontainers/postgresql/src/postgresql-container.ts:49:43
+ ❯ tests/integration/auth.test.ts:27:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  tests/integration/health.test.ts [ tests/integration/health.test.ts ]
+Error: Could not find a working container runtime strategy
+ ❯ getContainerRuntimeClient D:/BI/Research & Projects/Neo-Fiber/neo-fiber/backend/node_modules/testcontainers/src/container-runtime/clients/client.ts:63:9
+ ❯ PostgreSqlContainer.start D:/BI/Research & Projects/Neo-Fiber/neo-fiber/backend/node_modules/testcontainers/src/generic-container/generic-container.ts:86:20
+ ❯ PostgreSqlContainer.start D:/BI/Research & Projects/Neo-Fiber/neo-fiber/backend/node_modules/@testcontainers/postgresql/src/postgresql-container.ts:49:43
+ ❯ tests/integration/health.test.ts:30:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/services/dwh/__tests__/poller.test.ts > DwhPoller > uses exponential backoff: 1s → 2s → reset on success
+AssertionError: expected "spy" to be called 2 times, but got 3 times
+ ❯ src/services/dwh/__tests__/poller.test.ts:268:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  3 failed | 2 passed (5)
+      Tests  1 failed | 20 passed | 17 skipped (38)
+   Start at  22:18:01
+   Duration  47.97s (transform 535ms, setup 0ms, collect 93.29s, tests 5.64s, environment 3ms, prepare 4.55s)
