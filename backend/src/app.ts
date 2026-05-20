@@ -17,6 +17,7 @@ import alarmsRouter from './routes/alarms.js';
 import docsRouter from './routes/docs.js';
 import tilesRouter from './routes/tiles.js';
 import mapRouter from './routes/map.js';
+import dashboardRouter from './routes/dashboard.js';
 
 // Rate limiters are bypassed in test mode to prevent flaky test failures
 // (test suites fire many requests in rapid succession by design).
@@ -74,6 +75,7 @@ export function createApp(): express.Express {
   app.use('/api/v1/alternate-paths', alternatePathsRouter);
   app.use('/api/v1/alarms', alarmsRouter);
   app.use('/api/v1/map', mapRouter);
+  app.use('/api/v1/dashboard', dashboardRouter);
   app.use('/tiles', tilesRouter);
   app.use('/api', docsRouter);
 
