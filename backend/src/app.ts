@@ -13,6 +13,8 @@ import linksRouter from './routes/links.js';
 import alternatePathsRouter from './routes/alternate-paths.js';
 import alarmsRouter from './routes/alarms.js';
 import docsRouter from './routes/docs.js';
+import tilesRouter from './routes/tiles.js';
+import mapRouter from './routes/map.js';
 
 // Rate limiters are bypassed in test mode to prevent flaky test failures
 // (test suites fire many requests in rapid succession by design).
@@ -69,6 +71,8 @@ export function createApp(): express.Express {
   app.use('/api/v1/links', linksRouter);
   app.use('/api/v1/alternate-paths', alternatePathsRouter);
   app.use('/api/v1/alarms', alarmsRouter);
+  app.use('/api/v1/map', mapRouter);
+  app.use('/tiles', tilesRouter);
   app.use('/api', docsRouter);
 
   // 404 handler for unknown routes

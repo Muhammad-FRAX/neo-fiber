@@ -4,7 +4,10 @@ import type { ReachabilityResult } from './reachability.js';
 export type TopologyStatusEvent = ReachabilityResult & { computedAt: string };
 
 class TopologyBus extends EventEmitter {
+  lastEvent: TopologyStatusEvent | null = null;
+
   publish(event: TopologyStatusEvent): void {
+    this.lastEvent = event;
     this.emit('topology_status', event);
   }
 
