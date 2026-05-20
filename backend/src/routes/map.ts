@@ -24,6 +24,59 @@ import { logger } from '../lib/logger.js';
 
 const router = Router();
 
+// ---- Map links endpoint (with coordinates) ----------------------------------
+
+const MapLinkSchema = z.object({
+  id: z.number(),
+  source_lat: z.number().nullable(),
+  source_lng: z.number().nullable(),
+  target_lat: z.number().nullable(),
+  target_lng: z.number().nullable(),
+  ranking: z.string(),
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/map/links',
+  summary: 'Links with source/target coordinates for map rendering',
+  tags: ['Map'],
+  responses: {
+    200: {
+      description: 'Links with geographic coordinates',
+      content: { 'application/json': { schema: z.object({ data: z.array(MapLinkSchema) }) } },
+    },
+  },
+});
+
+router.get(
+  '/links',
+  requireAuth,
+  asyncHandler(async (_req, res) => {
+    const result = await appPool.query<{
+      id: number;
+      source_lat: number | null;
+      source_lng: number | null;
+      target_lat: number | null;
+      target_lng: number | null;
+      ranking: string;
+    }>(
+      `SELECT l.id,
+              ss.lat AS source_lat, ss.lng AS source_lng,
+              ts.lat AS target_lat, ts.lng AS target_lng,
+              l.ranking
+         FROM links l
+         JOIN devices sd ON sd.id = l.source_device_id
+         JOIN sites  ss ON ss.id = sd.site_id
+         JOIN devices td ON td.id = l.target_device_id
+         JOIN sites  ts ON ts.id = td.site_id
+        ORDER BY l.id`,
+    );
+    res.json({ data: result.rows });
+  }),
+);
+
+// ---- Map status endpoint ----------------------------------------------------
+
 const MapStatusSchema = z.object({
   down_devices: z.number(),
   down_links: z.number(),

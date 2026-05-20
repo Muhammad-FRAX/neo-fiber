@@ -21,9 +21,16 @@ export interface SseStreamContext {
 }
 
 function extractToken(req: Request): string | null {
+  // Standard Bearer header (used by REST endpoints)
   const authHeader = req.headers['authorization'];
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  return authHeader.slice(7);
+  if (authHeader?.startsWith('Bearer ')) return authHeader.slice(7);
+
+  // EventSource doesn't support custom headers, so the client sends the
+  // JWT as a ?token= query parameter for SSE streams.
+  const queryToken = req.query['token'];
+  if (typeof queryToken === 'string' && queryToken) return queryToken;
+
+  return null;
 }
 
 /**

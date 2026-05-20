@@ -40,8 +40,10 @@ interface SiteApiRow {
 
 interface LinkApiRow {
   id: number
-  source_device_id: number
-  target_device_id: number
+  source_lat: number | null
+  source_lng: number | null
+  target_lat: number | null
+  target_lng: number | null
   ranking: string
 }
 
@@ -84,6 +86,15 @@ export default function MapPage() {
       }>("/api/v1/map/status"),
     refetchInterval: 30_000,
     staleTime: 10_000,
+  })
+
+  const {
+    data: linksData,
+  } = useQuery({
+    queryKey: ["map-links"],
+    queryFn: () =>
+      apiClient.get<{ data: LinkApiRow[] }>("/api/v1/map/links"),
+    staleTime: 60_000,
   })
 
   const {
@@ -238,9 +249,17 @@ export default function MapPage() {
       effective_status: statusColor(siteStatuses.get(s.id) ?? "UNKNOWN"),
     }))
 
-  // Links: we don't have source/target coords directly without joining devices+sites
-  // Phase 8 shows links as empty set until the topology query is wired in Phase 10.
-  const mapLinks: MapLink[] = []
+  const rawLinks = linksData?.data ?? []
+  const mapLinks: MapLink[] = rawLinks
+    .filter((l) => l.source_lat !== null && l.source_lng !== null && l.target_lat !== null && l.target_lng !== null)
+    .map((l) => ({
+      id: l.id,
+      source_lat: l.source_lat!,
+      source_lng: l.source_lng!,
+      target_lat: l.target_lat!,
+      target_lng: l.target_lng!,
+      effective_status: (linkStatuses.get(l.id) ?? "UP") as "UP" | "DEGRADED" | "DOWN",
+    }))
 
   const ariaTableSites: SiteRow[] = rawSites.map((s) => ({
     id: s.id,

@@ -229,7 +229,7 @@ describe('GET /api/v1/stream/alarms — event delivery', () => {
 });
 
 describe('GET /api/v1/stream/topology — event delivery', () => {
-  it('pushes a topology_status event to connected clients', async () => {
+  it('pushes a topology event to connected clients', async () => {
     const token = makeToken();
 
     const collectPromise = collectSseChunks('/api/v1/stream/topology', token, 300);
@@ -243,7 +243,7 @@ describe('GET /api/v1/stream/topology — event delivery', () => {
     });
 
     const body = await collectPromise;
-    expect(body).toContain('event: topology_status');
+    expect(body).toContain('event: topology');
     expect(body).toContain('DEGRADED');
   });
 });
