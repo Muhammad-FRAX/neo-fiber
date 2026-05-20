@@ -1,0 +1,176 @@
+@import "tailwindcss";
+
+/* ── Self-hosted fonts (files added in Phase 8) ─────────────────────────── */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono.woff2") format("woff2");
+}
+
+/* ── Design tokens — light theme (default) ───────────────────────────────── */
+:root {
+  /* Status (sacred — never repurpose for chrome) */
+  --status-up: #10b981;       /* emerald-500 */
+  --status-degraded: #f59e0b; /* amber-500 */
+  --status-down: #f43f5e;     /* rose-500 */
+  --status-unknown: #94a3b8;  /* slate-400 */
+
+  /* Alarm severity */
+  --sev-critical: #dc2626; /* rose-600 */
+  --sev-major: #f97316;    /* orange-500 */
+  --sev-minor: #fbbf24;    /* amber-400 */
+  --sev-info: #0ea5e9;     /* sky-500 */
+
+  /* Chrome — light theme */
+  --bg: #ffffff;
+  --bg-elevated: #f8fafc;  /* slate-50 */
+  --border: #e2e8f0;        /* slate-200 */
+  --text: #0f172a;          /* slate-900 */
+  --text-muted: #64748b;    /* slate-500 */
+
+  /* Sidebar (always dark even in light theme) */
+  --sidebar-bg: #0f172a;   /* slate-900 */
+  --sidebar-text: #cbd5e1; /* slate-300 */
+  --sidebar-active: #6366f1; /* indigo-500 */
+
+  /* Accent */
+  --accent-500: #6366f1; /* indigo-500 */
+  --accent-600: #4f46e5; /* indigo-600 — hover */
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
+  --shadow-glass: 0 4px 24px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+
+  /* Z-index scale */
+  --z-base: 0;
+  --z-map-overlay: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-popover: 600;
+
+  /* Motion */
+  --duration-75: 75ms;
+  --duration-150: 150ms;
+  --duration-200: 200ms;
+  --duration-300: 300ms;
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* ── Dark theme overrides ────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg: #0f172a;           /* slate-900 */
+  --bg-elevated: #1e293b;  /* slate-800 */
+  --border: #334155;       /* slate-700 */
+  --text: #f1f5f9;         /* slate-100 */
+  --text-muted: #94a3b8;   /* slate-400 */
+
+  /* Sidebar in dark theme — slightly darker than page bg */
+  --sidebar-bg: #020617;   /* slate-950 */
+  --sidebar-text: #94a3b8; /* slate-400 */
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.30);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.40);
+  --shadow-glass: 0 4px 24px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ── Tailwind v4 theme extension ─────────────────────────────────────────── */
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* Text scale (maps to §11 type tokens) */
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-hero: 3rem;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-DEFAULT: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+}
+
+/* ── Global base styles ──────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Dark theme is the default (NOC-friendly — §11 / P7-3C) */
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Focus rings (WCAG 2.2 AA — §11 / Pass 6) ───────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent-500);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/* ── Skip link ───────────────────────────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--accent-500);
+  color: #fff;
+  padding: 8px 16px;
+  z-index: var(--z-popover);
+  border-radius: 0 0 6px 6px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: top var(--duration-150) var(--ease-default);
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
