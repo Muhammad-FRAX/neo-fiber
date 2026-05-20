@@ -16,6 +16,8 @@
   "license": "ISC",
   "description": "Neo-Fiber backend — Express 5 ESM, PostGIS, real-time SSE",
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^7.3.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -26,6 +28,8 @@
     "ldapjs": "^3.0.7",
     "pg": "^8.14.1",
     "pino": "^9.7.0",
+    "swagger-ui-dist": "^5.32.6",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^3.25.49"
   },
   "devDependencies": {
