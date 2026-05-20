@@ -7,6 +7,12 @@ import { errorHandler } from './middleware/error-handler.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import streamRouter from './routes/stream.js';
+import sitesRouter from './routes/sites.js';
+import devicesRouter from './routes/devices.js';
+import linksRouter from './routes/links.js';
+import alternatePathsRouter from './routes/alternate-paths.js';
+import alarmsRouter from './routes/alarms.js';
+import docsRouter from './routes/docs.js';
 
 // Rate limiters are bypassed in test mode to prevent flaky test failures
 // (test suites fire many requests in rapid succession by design).
@@ -58,6 +64,12 @@ export function createApp(): express.Express {
   app.use('/api/v1', healthRouter);
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/stream', streamRouter);
+  app.use('/api/v1/sites', sitesRouter);
+  app.use('/api/v1/devices', devicesRouter);
+  app.use('/api/v1/links', linksRouter);
+  app.use('/api/v1/alternate-paths', alternatePathsRouter);
+  app.use('/api/v1/alarms', alarmsRouter);
+  app.use('/api', docsRouter);
 
   // 404 handler for unknown routes
   app.use((_req, res) => {

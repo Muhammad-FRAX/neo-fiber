@@ -91,7 +91,16 @@ export async function migrateDown(): Promise<void> {
   console.log(`  rolled back:  ${last}`);
 }
 
-// CLI entry point
+// CLI entry point — only runs when this file is executed directly, not when imported as a module.
+const isMain =
+  typeof process.argv[1] === 'string' &&
+  process.argv[1].endsWith('migrate.ts') ||
+  process.argv[1]?.endsWith('migrate.js');
+
+if (!isMain) {
+  // Imported as a module — skip CLI code
+} else {
+
 const command = process.argv[2] ?? 'up';
 if (command === 'up') {
   migrateUp()
@@ -117,3 +126,5 @@ if (command === 'up') {
   console.error(`Unknown command: ${command}. Use "up" or "down".`);
   process.exit(1);
 }
+
+} // end if (isMain)
