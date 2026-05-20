@@ -262,14 +262,16 @@ describe('DwhPoller', () => {
     await vi.runOnlyPendingTimersAsync();
     expect(dwhPool.query).toHaveBeenCalledTimes(1);
 
-    // Advance 1s → second tick → fails → schedules 2s retry
+    // Advance 1s → second tick → fails → schedules 2s retry.
+    // Do NOT call runOnlyPendingTimersAsync here: it would fire the newly-queued
+    // 2s retry immediately regardless of remaining delay (it runs all pending
+    // timers, not just elapsed ones). advanceTimersByTimeAsync already awaits
+    // the full async tick before returning.
     await vi.advanceTimersByTimeAsync(1_000);
-    await vi.runOnlyPendingTimersAsync();
     expect(dwhPool.query).toHaveBeenCalledTimes(2);
 
     // Advance 2s → third tick → succeeds → resets to pollIntervalMs (5s)
     await vi.advanceTimersByTimeAsync(2_000);
-    await vi.runOnlyPendingTimersAsync();
     expect(dwhPool.query).toHaveBeenCalledTimes(3);
 
     poller.stop();
