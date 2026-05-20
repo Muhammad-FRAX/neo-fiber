@@ -1,133 +1,106 @@
-# CONTINUATION — Phase 3 complete; Phase 4 ready
+# CONTINUATION — Phase 4 complete; Phase 5 ready
 
-**Branch:** `claude/issue-10-20260520-0537`
-**Phases completed:** Phase 2 (Auth) + Phase 3 (DWH poller + alarm resolver + event bus)
+**Branch:** `claude/issue-12-20260520-0745`
+**Phases completed:** Phase 2 (Auth) + Phase 3 (DWH poller + alarm resolver + event bus) + Phase 4 (Reachability engine + hull cache + regression suite)
 **Date written:** 2026-05-20
-**Status:** All unit tests green. Integration tests require Docker locally (see below).
+**Status:** All Phase 4 tests green (7/7 unit + 3/3 regression). Integration tests require Docker locally (see below). Two pre-existing typecheck errors from Phase 2 remain (see Known Issues).
 
 ---
 
-## Test results summary (as of 2026-05-20)
+## Test results summary (as of Phase 4 completion)
 
 | Suite | Result | Notes |
 |---|---|---|
+| `src/services/topology/__tests__/reachability.test.ts` | ✅ 7/7 | Phase 4 — two-pass BFS reachability (T1) |
+| `tests/regression/backup-aware-1-cascading-false-positive.test.ts` | ✅ 1/1 | Phase 4 — cascading false positive (T6) |
+| `tests/regression/backup-aware-2-degraded-not-down.test.ts` | ✅ 3/3 | Phase 4 — MAIN-down/BACKUP-up = DEGRADED (T6) |
+| `tests/regression/backup-aware-3-real-historical-incident.test.ts` | ✅ 1/1 | Phase 4 — Sudan backbone cut 2025-07-10 (T6) |
 | `src/services/dwh/__tests__/alarm-resolver.test.ts` | ✅ 10/10 | Phase 3 — alarm resolver |
-| `src/services/dwh/__tests__/poller.test.ts` | ✅ 7/7 | Phase 3 — poller (backoff test bug fixed) |
+| `src/services/dwh/__tests__/poller.test.ts` | ✅ 7/7 | Phase 3 — poller |
 | `tests/unit/auth/jwt.test.ts` | ✅ 4/4 | Phase 2 — JWT sign/verify |
-| `tests/integration/auth.test.ts` | ⏭ 11 skipped | Needs Docker Desktop running (testcontainers) |
-| `tests/integration/health.test.ts` | ⏭ 6 skipped | Needs Docker Desktop running (testcontainers) |
+| `tests/integration/auth.test.ts` | ❌ 6 failing (429) | Pre-existing Phase 2 issue — rate limiter fires during test burst |
+| `tests/integration/health.test.ts` | ⏭ | Needs Docker for testcontainers |
 
-**Why integration tests skip:** testcontainers requires Docker to spin up a real
-PostgreSQL container. If Docker Desktop is not running on your machine, all
-integration tests skip with `Could not find a working container runtime strategy`.
+**Phase 4 IRON RULE:** 7/7 unit tests + 3/3 regression tests — all pass. Any failure here blocks v1.0.
 
-**Fix:** start Docker Desktop, then re-run `npm test`. All integration tests should pass.
+**Why integration auth tests show 429:** The `express-rate-limit` middleware in the app is too aggressive for the test burst (many sequential requests from supertest hit the limit). This is a Phase 2 issue, not Phase 4. Fix: disable rate limiting in `test` env, or reset the limiter between tests.
 
 ---
 
-## What was fixed in this session
+## Known issues (pre-existing from Phase 2, not Phase 4)
 
-### Poller backoff test bug (poller.test.ts line 266–272)
+### 1. TypeScript typecheck errors
 
-**Root cause:** `vi.runOnlyPendingTimersAsync()` fires *all* timers currently in
-the queue regardless of remaining delay — not just elapsed ones. After
-`advanceTimersByTimeAsync(1_000)` fired the 1s retry and queued the 2s retry,
-calling `runOnlyPendingTimersAsync()` immediately fired the 2s retry too,
-producing 3 query calls when only 2 were expected.
+```
+src/app.ts(3,18): error TS7016: Could not find a declaration file for module 'cors'
+src/auth/jwt.ts(34,10): error TS2352: Conversion of type 'string | JwtPayload'...
+```
 
-**Fix:** removed the two redundant `runOnlyPendingTimersAsync()` calls that
-followed `advanceTimersByTimeAsync(...)`. `advanceTimersByTimeAsync` already
-awaits the full async tick before returning, so the extra call is both wrong and
-unnecessary.
+**Fix for cors:** `npm install --save-dev @types/cors`
+**Fix for jwt.ts:** cast through `unknown` first: `jwt.verify(...) as unknown as JwtPayload`
+
+These are not Phase 4 regressions — Phase 4 files (`reachability.ts`, `hull-cache.ts`, `affected-region.ts`) are type-clean.
+
+### 2. Rate limiter in integration tests
+
+Integration auth tests hit the rate limit (429) because supertest fires many requests without resetting the limiter. Fix in Phase 5/6: set `NODE_ENV=test` to disable rate limiting or use a shorter window in tests.
 
 ---
 
-## Phase 2 — what was built
+## Phase 4 — what was built
 
 | File | What it does |
 |------|-------------|
-| `backend/src/auth/ldap.ts` | LDAP bind via ldapjs; UPN format; LdapUnreachableError + LdapInvalidCredentialsError |
-| `backend/src/auth/jwt.ts` | Sign + verify with HS256; 8h TTL from JWT_TTL_SECONDS |
-| `backend/src/auth/bcrypt.ts` | Local fallback; constant-time compare; AUTH_LOCAL_ONLY gate |
-| `backend/src/middleware/auth.ts` | requireAuth middleware; attaches req.user |
-| `backend/src/routes/auth.ts` | POST /login, POST /logout, GET /me |
-| `backend/src/db/migrations/0002_users_password_hash.sql` | Adds password_hash to users table |
-| `backend/tests/unit/auth/jwt.test.ts` | JWT sign/verify unit tests (4 cases) |
-| `backend/tests/integration/auth.test.ts` | Auth route integration tests (11 cases, AUTH_LOCAL_ONLY) |
+| `backend/src/services/topology/reachability.ts` | Two-pass BFS reachability per DESIGN.md §9 (T1) |
+| `backend/src/services/topology/hull-cache.ts` | Sorted-site-ID key, 10-min eviction (T13) |
+| `backend/src/services/topology/affected-region.ts` | PostGIS ST_ConcaveHull + ST_Buffer wrapper |
+| `backend/src/services/topology/__tests__/reachability.test.ts` | 7 unit scenarios (T1) |
+| `backend/tests/regression/backup-aware-1-cascading-false-positive.test.ts` | Regression #1 (T6) |
+| `backend/tests/regression/backup-aware-2-degraded-not-down.test.ts` | Regression #2 (T6) |
+| `backend/tests/regression/backup-aware-3-real-historical-incident.test.ts` | Regression #3 (T6) |
 
-**Deferred to local verification (needs real LDAP + environment):**
-- Real LDAP bind against `ldap.sd.zain.com`
-- LDAP unreachable scenario: `LDAP_URL=ldap://127.0.0.1:9999 npm run dev` → 503 `LDAP_UNREACHABLE`
-- Actual 8-hour token expiry kick
+**Tasks closed:** T1 (reachability), T6 (regression suite), T13 (hull cache)
 
 ---
 
-## Phase 3 — what was built
+## Deferred to local verification (cannot verify in CI)
 
-| File | What it does |
-|------|-------------|
-| `backend/src/services/dwh/poller.ts` | setInterval poller with cursor-based WHERE clause and exponential backoff |
-| `backend/src/services/dwh/alarm-resolver.ts` | FiberlinkSite_ID → Source_NE/Sink_NE → Site_A/B_ID fallback chain (T12) |
-| `backend/src/services/dwh/event-bus.ts` | In-process EventEmitter; subscribe/publish/unsubscribe |
-| `backend/src/services/dwh/queries.ts` | fetchNewAlarms — raw pg query against dwh.fibergis_alarm_log |
-| `backend/src/services/dwh/__tests__/alarm-resolver.test.ts` | 10 resolver unit tests covering all fallback chain variants |
-| `backend/src/services/dwh/__tests__/poller.test.ts` | 7 poller unit tests including backoff, cursor, isFiberCut, stop() |
-
-**Tasks closed:** T12
-
----
-
-## Local verification commands (run on a machine with Docker + Node 20)
+Phase 4 has no live-service dependencies — the reachability engine is a pure function and the hull cache is in-process. The only file touching Postgres is `affected-region.ts` (PostGIS wrapper), which needs a real PostGIS instance. To test `affected-region.ts` locally:
 
 ```bash
 # 1. Start the dev database
 docker compose -f docker-compose.dev.yaml up -d
 
-# 2. Install backend dependencies
-cd backend && npm install
-
-# 3. Set up .env
-cp backend/.env.example backend/.env
-# Edit APP_DB_URL, DWH_URL, JWT_SECRET, AUTH_LOCAL_ONLY=true
-
-# 4. Apply migrations
+# 2. Apply migrations
 cd backend && npm run migrate
 
-# 5. Run all tests (Docker must be running for integration tests)
-npm test
-
-# 6. Type-check
-npm run typecheck
-
-# 7. Smoke test auth locally
-curl -X POST http://localhost:5000/api/v1/auth/login \
-     -H 'Content-Type: application/json' \
-     -d '{"username":"testuser","password":"correct-password"}'
-# → { "token": "eyJ...", "user": { ... } }
+# 3. Seed a few test sites with geom columns, then:
+node -e "
+const { Pool } = require('pg');
+const { computeAffectedRegion } = require('./dist/services/topology/affected-region.js');
+const pool = new Pool({ connectionString: 'postgresql://...' });
+computeAffectedRegion(pool, [1, 2, 3]).then(console.log);
+"
 ```
 
 ---
 
-## Next step — Phase 4
+## Next step — Phase 5
 
-Once local tests are green (Docker running, all 5 suites pass):
+**Phase 5: SSE endpoints + topology broadcasting**
 
-> Read DESIGN.md §9 reachability, §9 affected-region, §12.5 testing CRITICAL
-> regression. Implement Phase 4 from §28: two-pass BFS, hull cache, and the 3
-> critical regression tests. Pick test fixtures with a senior engineer — provide
-> one real historical incident.
+Read DESIGN.md §9 Real-time architecture, §9 SSE resilience baseline, §9 Auth row (reauth-event behavior). Then:
 
-**Phase 4 starter prompt (paste into a fresh Claude Code session):**
+> Read DESIGN.md §9 real-time, §9 SSE resilience, §9 auth (reauth behavior). Implement Phase 5 from §28: SSE streams for alarms + topology, heartbeat, token-expiry kick.
 
-> Read DESIGN.md §9 reachability, §9 affected-region, §12.5 testing CRITICAL regression. Implement Phase 4 from §28: two-pass BFS, hull cache, and the 3 critical regression tests. Pick test fixtures with me — I'll provide one real historical incident.
+**Files Phase 5 will create:**
+- `backend/src/streams/sse-base.ts` — opens a stream, heartbeat, auth check per write
+- `backend/src/streams/alarms.ts` — subscribes to event bus, writes alarm events
+- `backend/src/streams/topology.ts` — subscribes to reachability output, writes topology_status events
+- `backend/src/routes/stream.ts` — mounts both
+- Tests: connect, receive event, expire token mid-stream → `event: reauth` + close
 
-**Files Phase 4 will create:**
-- `backend/src/services/topology/reachability.ts` — two-pass BFS (T1)
-- `backend/src/services/topology/hull-cache.ts` — sorted-site-IDs key, 10-min eviction (T13)
-- `backend/src/services/topology/affected-region.ts` — PostGIS ST_ConcaveHull + ST_Buffer
-- `backend/src/services/topology/__tests__/reachability.test.ts` — 7 unit scenarios from §25 T1
-- `tests/regression/backup-aware-1-cascading-false-positive.test.ts`
-- `tests/regression/backup-aware-2-degraded-not-down.test.ts`
-- `tests/regression/backup-aware-3-real-historical-incident.test.ts`
-
-**IRON RULE:** all 3 regression tests must pass before v1.0. Any failure blocks the release.
+**Also fix in Phase 5 (inherited issues):**
+- Rate limiter too aggressive: disable in `test` env or add `NODE_ENV=test` bypass
+- Add `@types/cors` to devDependencies
+- Fix JWT cast in `src/auth/jwt.ts`
