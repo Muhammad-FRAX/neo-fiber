@@ -41,7 +41,6 @@ export default function LoginPage() {
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "An unexpected error occurred"
-      // Map known codes to user-friendly messages
       if (msg.includes("UNAUTHENTICATED") || msg.toLowerCase().includes("invalid")) {
         setError("Invalid credentials. Please check your username and password.")
       } else if (msg.includes("LDAP") || msg.toLowerCase().includes("ldap")) {
@@ -67,6 +66,7 @@ export default function LoginPage() {
 
       <div
         id="login-form"
+        className="fade-slide-in"
         style={{
           width: "100%",
           maxWidth: 360,
@@ -131,22 +131,14 @@ export default function LoginPage() {
                 required
                 disabled={loading}
                 aria-describedby={error ? "login-error" : undefined}
+                className="input-field"
                 style={{
                   width: "100%",
                   padding: "8px 12px",
                   borderRadius: 6,
-                  border: "1px solid var(--border)",
                   background: "var(--bg)",
                   color: "var(--text)",
                   fontSize: "var(--text-base)",
-                  outline: "none",
-                  transition: `border-color var(--duration-75) var(--ease-default)`,
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "var(--accent-500)"
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border)"
                 }}
               />
             </div>
@@ -170,22 +162,14 @@ export default function LoginPage() {
                   required
                   disabled={loading}
                   aria-describedby={error ? "login-error" : undefined}
+                  className="input-field"
                   style={{
                     width: "100%",
                     padding: "8px 40px 8px 12px",
                     borderRadius: 6,
-                    border: "1px solid var(--border)",
                     background: "var(--bg)",
                     color: "var(--text)",
                     fontSize: "var(--text-base)",
-                    outline: "none",
-                    transition: `border-color var(--duration-75) var(--ease-default)`,
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "var(--accent-500)"
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border)"
                   }}
                 />
                 <button
@@ -232,7 +216,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || !username || !password}
-              className="flex w-full items-center justify-center gap-2 rounded px-4 py-2.5 text-sm font-semibold transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               style={{
                 background: "var(--accent-500)",
                 color: "#fff",

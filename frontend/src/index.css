@@ -164,6 +164,38 @@ body {
   top: 0;
 }
 
+/* ── Sidebar button CSS hover (replaces JS onMouseEnter/Leave) ───────────── */
+.sidebar-btn:hover {
+  color: #fff !important;
+}
+
+/* ── Input field CSS focus (replaces JS onFocus/onBlur) ─────────────────── */
+.input-field {
+  border: 1px solid var(--border);
+  transition: border-color var(--duration-75) var(--ease-default);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--accent-500);
+}
+
+/* ── Login card entrance animation ──────────────────────────────────────── */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-slide-in {
+  animation: fadeSlideIn var(--duration-300) var(--ease-out-quart) both;
+}
+
 /* ── Reduced motion ──────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,

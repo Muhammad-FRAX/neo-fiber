@@ -58,6 +58,17 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
 
   const width = sidebarExpanded ? 240 : 64
 
+  // Labels fade in after sidebar has opened; fade out instantly before sidebar closes
+  const labelStyle: React.CSSProperties = {
+    opacity: sidebarExpanded ? 1 : 0,
+    transform: sidebarExpanded ? "none" : "translateX(-4px)",
+    transition: sidebarExpanded
+      ? `opacity var(--duration-150) var(--ease-default) 150ms, transform var(--duration-150) var(--ease-default) 150ms`
+      : `opacity 0ms, transform 0ms`,
+    pointerEvents: sidebarExpanded ? "auto" : "none",
+    whiteSpace: "nowrap",
+  }
+
   return (
     <nav
       aria-label="Primary"
@@ -103,20 +114,16 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
         >
           <Activity size={14} color="#fff" />
         </div>
-        {sidebarExpanded && (
-          <span
-            style={{
-              color: "var(--sidebar-text)",
-              fontSize: "var(--text-sm)",
-              fontWeight: 600,
-              whiteSpace: "nowrap",
-              opacity: sidebarExpanded ? 1 : 0,
-              transition: `opacity var(--duration-150) var(--ease-default)`,
-            }}
-          >
-            Neo-Fiber
-          </span>
-        )}
+        <span
+          style={{
+            color: "var(--sidebar-text)",
+            fontSize: "var(--text-sm)",
+            fontWeight: 600,
+            ...labelStyle,
+          }}
+        >
+          Neo-Fiber
+        </span>
       </div>
 
       {/* Nav items */}
@@ -138,6 +145,7 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
               to={item.to}
               end={item.end}
               aria-label={item.label}
+              title={!sidebarExpanded ? item.label : undefined}
               style={({ isActive }) => ({
                 display: "flex",
                 alignItems: "center",
@@ -182,17 +190,15 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
                   >
                     {item.icon}
                   </span>
-                  {sidebarExpanded && (
-                    <span
-                      style={{
-                        fontSize: "var(--text-sm)",
-                        fontWeight: isActive ? 600 : 500,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {item.label}
-                    </span>
-                  )}
+                  <span
+                    style={{
+                      fontSize: "var(--text-sm)",
+                      fontWeight: isActive ? 600 : 500,
+                      ...labelStyle,
+                    }}
+                  >
+                    {item.label}
+                  </span>
                 </>
               )}
             </NavLink>
@@ -213,6 +219,8 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
         <button
           onClick={handleLogout}
           aria-label="Sign out"
+          title={!sidebarExpanded ? "Sign out" : undefined}
+          className="sidebar-btn"
           style={{
             display: "flex",
             alignItems: "center",
@@ -228,19 +236,11 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
             width: "calc(100% - 16px)",
             textAlign: "left",
           }}
-          onMouseEnter={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = "#fff"
-          }}
-          onMouseLeave={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = "var(--sidebar-text)"
-          }}
         >
           <LogOut size={20} style={{ flexShrink: 0 }} aria-hidden="true" />
-          {sidebarExpanded && (
-            <span style={{ fontSize: "var(--text-sm)", fontWeight: 500, whiteSpace: "nowrap" }}>
-              Sign out
-            </span>
-          )}
+          <span style={{ fontSize: "var(--text-sm)", fontWeight: 500, ...labelStyle }}>
+            Sign out
+          </span>
         </button>
 
         {/* Expand/collapse toggle */}
@@ -248,6 +248,7 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
           onClick={toggleSidebar}
           aria-label={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
           aria-expanded={sidebarExpanded}
+          className="sidebar-btn"
           style={{
             display: "flex",
             alignItems: "center",
@@ -260,12 +261,6 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
             cursor: "pointer",
             color: "var(--sidebar-text)",
             transition: `color var(--duration-75) var(--ease-default)`,
-          }}
-          onMouseEnter={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = "#fff"
-          }}
-          onMouseLeave={(e) => {
-            ;(e.currentTarget as HTMLButtonElement).style.color = "var(--sidebar-text)"
           }}
         >
           <ChevronRight
