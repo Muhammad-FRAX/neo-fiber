@@ -6,10 +6,16 @@ import { requestContext } from './middleware/request-context.js';
 import { errorHandler } from './middleware/error-handler.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
+import streamRouter from './routes/stream.js';
+
+// Rate limiters are bypassed in test mode to prevent flaky test failures
+// (test suites fire many requests in rapid succession by design).
+const skipInTest = () => process.env['NODE_ENV'] === 'test';
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  skip: skipInTest,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -24,6 +30,7 @@ const globalLimiter = rateLimit({
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 5,
+  skip: skipInTest,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -50,6 +57,7 @@ export function createApp(): express.Express {
 
   app.use('/api/v1', healthRouter);
   app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/stream', streamRouter);
 
   // 404 handler for unknown routes
   app.use((_req, res) => {
