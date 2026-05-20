@@ -91,7 +91,59 @@ That's v1. Anything else (full alarm history, advanced filters, the dashboard ta
 4. **Drop Neo4j.** Postgres + PostGIS is the single source of truth.
 5. **SSE push, not polling** — alarm events stream from server to clients.
 6. **Dashboard ships in v1**, not v2 — wired to real Postgres aggregations from the alarm log. No mock data anywhere, ever.
-7. **`dwh.fibergis_alarm_log` is a VIEW**, not a table, defined as `dwh.fact_fiber LEFT JOIN dwh.dim_dwdm_site` on `Site_A_ID`. Real column list (from sample): `Log_Serial_Number`, `Alarm_key`, `Alarm_Name`, `Alarm_Severity`, `Alarm_Source`, `Status` (computed: 'Clear' / 'Not Clear'), `OccurrenceTime`, `ClearanceTime`, `DownTime` (computed interval), `LocationInformation`, `Contractor`, `FiberlinkSite_ID`, `FiberLinkSite_Name`, `Site_A_ID`, `Site_A_Latitude`, `Site_A_Longitude`, `State`, `Zone`, `Vendor`, `Site_Priority`, `Is_Hub`, `Is_VIP`, `Site_B_ID`, `Site_B_Latitude`, `Site_B_Longitude`, `Source_NE`, `Sink_NE`. **Data quality reality**: many alarms have empty geo / FiberLink fields (sample row 2 has only Source_NE/Sink_NE; row 3 has almost everything empty). The poller must be robust to nulls.
+7. **`dwh.fibergis_alarm_log` is a VIEW**, not a table. The data warehouse is the **`DWH`** Postgres database (capitalized); the schema is `dwh`; the view name is `fibergis_alarm_log`. It is defined as `dwh.fact_fiber LEFT JOIN dwh.dim_dwdm_site` on `Site_A_ID`. Verbatim DDL (confirmed 2026-05-20 by repo owner):
+
+   ```sql
+   -- dwh.fibergis_alarm_log source
+   CREATE OR REPLACE VIEW dwh.fibergis_alarm_log AS
+   SELECT ff."Log_Serial_Number",
+          ff."Alarm_key",
+          ff."Alarm_Name",
+          ff."Alarm_Severity",
+          ff."Alarm_Source",
+          CASE
+            WHEN ff."Status"::text = ANY (ARRAY[
+                'Unacknowledged and cleared Alarm'::text,
+                'Acknowledged and cleared Alarm'::text
+            ]) THEN 'Clear'::text
+            ELSE 'Not Clear'::text
+          END AS "Status",
+          ff."OccurrenceTime",
+          ff."ClearanceTime",
+          CASE
+            WHEN ff.downtime < 0 THEN NULL::interval
+            ELSE justify_interval(make_interval(secs => ff.downtime::double precision))
+          END AS "DownTime",
+          ff."LocationInformation",
+          ff."Contractor",
+          ff."FiberlinkSite_ID",
+          ff."FiberLinkSite_Name",
+          ff."Site_A_ID",
+          ff."Site_A_Latitude",
+          ff."Site_A_Longitude",
+          ff."State",
+          ff."Zone",
+          ff."Vendor",
+          ff."Site_Priority",
+          ff."Is_Hub",
+          ff."Is_VIP",
+          ff."Site_B_ID",
+          ff."Site_B_Latitude",
+          ff."Site_B_Longitude",
+          ff."Source_NE",
+          ff."Sink_NE"
+     FROM dwh.fact_fiber ff
+     LEFT JOIN dwh.dim_dwdm_site dds ON dds."Site_ID"::text = ff."Site_A_ID"::text;
+   ```
+
+   Notes baked into the DDL — important for app queries:
+
+   - **`Status` is a 2-value computed string**, not free-form. Only `'Clear'` and `'Not Clear'`. App queries filter `WHERE "Status" = 'Not Clear'` for active alarms. Upstream `fact_fiber.Status` may have other values; the view collapses them.
+   - **`DownTime` is a Postgres `interval`**, computed from `fact_fiber.downtime` (seconds, numeric). Negative downtimes return `NULL` — handle as "duration unknown" in UI, not zero.
+   - The view is **read-only by definition** (joined with a `LEFT JOIN` on a dim table) — even with a write-capable DWH user, the view cannot be INSERTed into. Reinforces the §9 rule: app never writes to DWH.
+   - Site-A enrichment (`State`, `Zone`, `Vendor`, `Is_Hub`, `Is_VIP`, `Site_Priority`) comes from `dim_dwdm_site` — these can be NULL when `Site_A_ID` doesn't match any dim row. Defensive parsing required.
+
+   Column list (28 total): `Log_Serial_Number`, `Alarm_key`, `Alarm_Name`, `Alarm_Severity`, `Alarm_Source`, `Status` ('Clear' / 'Not Clear'), `OccurrenceTime`, `ClearanceTime`, `DownTime` (interval), `LocationInformation`, `Contractor`, `FiberlinkSite_ID`, `FiberLinkSite_Name`, `Site_A_ID`, `Site_A_Latitude`, `Site_A_Longitude`, `State`, `Zone`, `Vendor`, `Site_Priority`, `Is_Hub`, `Is_VIP`, `Site_B_ID`, `Site_B_Latitude`, `Site_B_Longitude`, `Source_NE`, `Sink_NE`. **Data quality reality**: many alarms have empty geo / FiberLink fields (sample row 2 has only Source_NE/Sink_NE; row 3 has almost everything empty). The poller must be robust to nulls.
 
 8. **Only one alarm name = a fiber cut.** The DWH receives many alarm types (T_ALOS, ETH_LOS, etc.), but only one specific name represents an actual fiber-cut event that should change topology status. The exact name is TBD by the user. **Solution**: `FIBER_CUT_ALARM_NAME` env var (e.g. `FIBER_CUT_ALARM_NAME=R_LOS`). The DWH poller filters by this name to trigger reachability recompute. All other alarms are still ingested into the in-memory event bus and visible in the live alarms ticker + dashboard aggregations, but they do NOT trigger reachability or map color changes. This reduces D1 (alarm storm) risk and D4 (hull recompute) cost by ~10×+ in practice.
 
