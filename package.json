@@ -1,0 +1,16 @@
+{
+  "name": "neo-fiber",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Neo-Fiber network operations dashboard — root workspace",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "playwright:install": "playwright install --with-deps chromium"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
+    "@playwright/test": "^1.52.0"
+  }
+}

@@ -1,106 +1,120 @@
-# CONTINUATION — Phase 4 complete; Phase 5 ready
+# CONTINUATION — Phase 9 complete; v1.0 ready for local verification
 
-**Branch:** `claude/issue-12-20260520-0745`
-**Phases completed:** Phase 2 (Auth) + Phase 3 (DWH poller + alarm resolver + event bus) + Phase 4 (Reachability engine + hull cache + regression suite)
+**Branch:** `claude/issue-24-20260520-1201`
+**Phases completed:** 1 → 9 (all v1.0 phases)
 **Date written:** 2026-05-20
-**Status:** All Phase 4 tests green (7/7 unit + 3/3 regression). Integration tests require Docker locally (see below). Two pre-existing typecheck errors from Phase 2 remain (see Known Issues).
 
 ---
 
-## Test results summary (as of Phase 4 completion)
+## Test results summary (as of Phase 9 completion)
 
 | Suite | Result | Notes |
 |---|---|---|
-| `src/services/topology/__tests__/reachability.test.ts` | ✅ 7/7 | Phase 4 — two-pass BFS reachability (T1) |
-| `tests/regression/backup-aware-1-cascading-false-positive.test.ts` | ✅ 1/1 | Phase 4 — cascading false positive (T6) |
-| `tests/regression/backup-aware-2-degraded-not-down.test.ts` | ✅ 3/3 | Phase 4 — MAIN-down/BACKUP-up = DEGRADED (T6) |
-| `tests/regression/backup-aware-3-real-historical-incident.test.ts` | ✅ 1/1 | Phase 4 — Sudan backbone cut 2025-07-10 (T6) |
-| `src/services/dwh/__tests__/alarm-resolver.test.ts` | ✅ 10/10 | Phase 3 — alarm resolver |
-| `src/services/dwh/__tests__/poller.test.ts` | ✅ 7/7 | Phase 3 — poller |
-| `tests/unit/auth/jwt.test.ts` | ✅ 4/4 | Phase 2 — JWT sign/verify |
-| `tests/integration/auth.test.ts` | ❌ 6 failing (429) | Pre-existing Phase 2 issue — rate limiter fires during test burst |
-| `tests/integration/health.test.ts` | ⏭ | Needs Docker for testcontainers |
+| `src/services/topology/__tests__/reachability.test.ts` | ✅ 7/7 | Two-pass BFS (T1) |
+| `tests/regression/backup-aware-1-cascading-false-positive.test.ts` | ✅ 1/1 | Regression T6 |
+| `tests/regression/backup-aware-2-degraded-not-down.test.ts` | ✅ 3/3 | Regression T6 |
+| `tests/regression/backup-aware-3-real-historical-incident.test.ts` | ✅ 1/1 | Regression T6 |
+| `src/services/dwh/__tests__/alarm-resolver.test.ts` | ✅ 10/10 | Alarm resolver (T12) |
+| `src/services/dwh/__tests__/poller.test.ts` | ✅ 7/7 | DWH poller |
+| `tests/unit/auth/jwt.test.ts` | ✅ 4/4 | JWT sign/verify |
+| `tests/integration/auth.test.ts` | ✅ 11/11 | Auth HTTP (testcontainers) |
+| `tests/integration/health.test.ts` | ✅ | testcontainers DB |
+| `tests/integration/tiles.test.ts` | ✅ | Range request (T3) |
+| Frontend unit tests | ✅ 14/14 | Components + hooks |
+| Backend typecheck | ✅ clean | |
+| Frontend typecheck | ✅ clean | |
+| Vite production build | ✅ | One chunk-size warning, not blocking |
 
-**Phase 4 IRON RULE:** 7/7 unit tests + 3/3 regression tests — all pass. Any failure here blocks v1.0.
-
-**Why integration auth tests show 429:** The `express-rate-limit` middleware in the app is too aggressive for the test burst (many sequential requests from supertest hit the limit). This is a Phase 2 issue, not Phase 4. Fix: disable rate limiting in `test` env, or reset the limiter between tests.
-
----
-
-## Known issues (pre-existing from Phase 2, not Phase 4)
-
-### 1. TypeScript typecheck errors
-
-```
-src/app.ts(3,18): error TS7016: Could not find a declaration file for module 'cors'
-src/auth/jwt.ts(34,10): error TS2352: Conversion of type 'string | JwtPayload'...
-```
-
-**Fix for cors:** `npm install --save-dev @types/cors`
-**Fix for jwt.ts:** cast through `unknown` first: `jwt.verify(...) as unknown as JwtPayload`
-
-These are not Phase 4 regressions — Phase 4 files (`reachability.ts`, `hull-cache.ts`, `affected-region.ts`) are type-clean.
-
-### 2. Rate limiter in integration tests
-
-Integration auth tests hit the rate limit (429) because supertest fires many requests without resetting the limiter. Fix in Phase 5/6: set `NODE_ENV=test` to disable rate limiting or use a shorter window in tests.
+**Phase 9 IRON RULE re-verify:** 7/7 unit + 3/3 regression tests — all pass. ✅
 
 ---
 
-## Phase 4 — what was built
+## Local verification required (cannot run in CI)
+
+These §14 acceptance items need the repo owner to verify on a real machine:
+
+### 1. Playwright E2E + axe-core
+
+```bash
+# Install Playwright browser (once)
+npm run playwright:install
+
+# Run E2E suite against dev server
+cd frontend && npm run dev &    # start Vite
+cd backend && npm run dev &     # start Express (with local .env)
+npm run test:e2e                # run Playwright specs
+```
+
+Expected: all specs pass, 0 axe-core serious/critical violations.
+
+### 2. `docker compose up` offline smoke test
+
+```bash
+# Build on a connected machine
+docker compose build
+docker tag neo-fiber-app:latest neo-fiber-app:v1.0.0
+
+# Save to tarball
+docker save neo-fiber-app:v1.0.0 postgis/postgis:16-3.4-alpine \
+  | gzip > neo-fiber-v1.0.0.tar.gz
+
+# Simulate offline: load and run with no internet
+gunzip -c neo-fiber-v1.0.0.tar.gz | docker load
+# Start with only the DB connected (no external network):
+docker compose up -d
+
+# Verify
+curl http://localhost:5000/api/v1/health
+# Expected: {"status":"ok","db":"ok",...}
+
+open http://localhost:5000
+# Expected: login page loads with self-hosted fonts, map tiles work
+```
+
+### 3. FCP ≤ 2.5 s (§14 acceptance)
+
+On a stock corporate laptop, cold cache:
+```bash
+# Using Chrome DevTools Network tab, throttle to Fast 3G, clear cache
+# Navigate to http://localhost:5000/map
+# Check First Contentful Paint in Performance panel
+```
+
+### 4. Alarm → visual update ≤ 15 s (§14 acceptance)
+
+On the deployment host with real DWH:
+```bash
+# Insert a test alarm row directly into the DWH (or wait for a real cut)
+# Observe the map ticker updates within 15 s
+# Observe topology colors update if FIBER_CUT_ALARM_NAME matches
+```
+
+---
+
+## What Phase 9 built
 
 | File | What it does |
 |------|-------------|
-| `backend/src/services/topology/reachability.ts` | Two-pass BFS reachability per DESIGN.md §9 (T1) |
-| `backend/src/services/topology/hull-cache.ts` | Sorted-site-ID key, 10-min eviction (T13) |
-| `backend/src/services/topology/affected-region.ts` | PostGIS ST_ConcaveHull + ST_Buffer wrapper |
-| `backend/src/services/topology/__tests__/reachability.test.ts` | 7 unit scenarios (T1) |
-| `backend/tests/regression/backup-aware-1-cascading-false-positive.test.ts` | Regression #1 (T6) |
-| `backend/tests/regression/backup-aware-2-degraded-not-down.test.ts` | Regression #2 (T6) |
-| `backend/tests/regression/backup-aware-3-real-historical-incident.test.ts` | Regression #3 (T6) |
-
-**Tasks closed:** T1 (reachability), T6 (regression suite), T13 (hull cache)
-
----
-
-## Deferred to local verification (cannot verify in CI)
-
-Phase 4 has no live-service dependencies — the reachability engine is a pure function and the hull cache is in-process. The only file touching Postgres is `affected-region.ts` (PostGIS wrapper), which needs a real PostGIS instance. To test `affected-region.ts` locally:
-
-```bash
-# 1. Start the dev database
-docker compose -f docker-compose.dev.yaml up -d
-
-# 2. Apply migrations
-cd backend && npm run migrate
-
-# 3. Seed a few test sites with geom columns, then:
-node -e "
-const { Pool } = require('pg');
-const { computeAffectedRegion } = require('./dist/services/topology/affected-region.js');
-const pool = new Pool({ connectionString: 'postgresql://...' });
-computeAffectedRegion(pool, [1, 2, 3]).then(console.log);
-"
-```
+| `playwright.config.ts` | Playwright config: Chromium, dev server, HTML report |
+| `tests/e2e/fixtures.ts` | API mock helper — all backend routes mocked via page.route() |
+| `tests/e2e/login.spec.ts` | Login flow, auth guard, axe-core WCAG 2.2 AA |
+| `tests/e2e/map-cut.spec.ts` | Map aria roles, KPI panel, ticker, mobile block, axe-core |
+| `tests/e2e/detail-modal.spec.ts` | Dialog aria, Esc-close, axe-core with modal open |
+| `tests/e2e/offline-bundle.spec.ts` | Air-gap checks: no CDN fonts/scripts, self-hosted tiles |
+| `Dockerfile` | 3-stage: frontend-build → backend-build → runtime (non-root, tini) |
+| `docker-compose.yaml` | Production compose: app + app-db (PostGIS) |
+| `backend/src/app.ts` | Added: serve frontend/dist in NODE_ENV=production + SPA catch-all |
+| `README.md` | Offline build flow, deployment runbook, env var reference |
+| `package.json` | Root: @playwright/test + @axe-core/playwright |
 
 ---
 
-## Next step — Phase 5
+## Next phases
 
-**Phase 5: SSE endpoints + topology broadcasting**
+Per DESIGN.md §28, v1.0 is shipped. Remaining phases are v1.5+:
 
-Read DESIGN.md §9 Real-time architecture, §9 SSE resilience baseline, §9 Auth row (reauth-event behavior). Then:
+- **Phase 10** — Dashboard with real DWH aggregations (no mock data)
+- **Phase 11** — Topology editor + alternate paths + CSV import + audit
+- **Phase 12** — Polish after real usage (only after director uses v1.0 during a real cut)
 
-> Read DESIGN.md §9 real-time, §9 SSE resilience, §9 auth (reauth behavior). Implement Phase 5 from §28: SSE streams for alarms + topology, heartbeat, token-expiry kick.
-
-**Files Phase 5 will create:**
-- `backend/src/streams/sse-base.ts` — opens a stream, heartbeat, auth check per write
-- `backend/src/streams/alarms.ts` — subscribes to event bus, writes alarm events
-- `backend/src/streams/topology.ts` — subscribes to reachability output, writes topology_status events
-- `backend/src/routes/stream.ts` — mounts both
-- Tests: connect, receive event, expire token mid-stream → `event: reauth` + close
-
-**Also fix in Phase 5 (inherited issues):**
-- Rate limiter too aggressive: disable in `test` env or add `NODE_ENV=test` bypass
-- Add `@types/cors` to devDependencies
-- Fix JWT cast in `src/auth/jwt.ts`
+**Before starting Phase 10,** complete local verification above (especially the `docker compose up` offline test and Playwright E2E run).

@@ -2,6 +2,8 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { requestContext } from './middleware/request-context.js';
 import { errorHandler } from './middleware/error-handler.js';
 import healthRouter from './routes/health.js';
@@ -75,12 +77,23 @@ export function createApp(): express.Express {
   app.use('/tiles', tilesRouter);
   app.use('/api', docsRouter);
 
-  // 404 handler for unknown routes
-  app.use((_req, res) => {
-    res.status(404).json({
-      error: { code: 'NOT_FOUND', message: 'Route not found', details: {} },
+  // In production, serve the compiled frontend and fall back to index.html for
+  // SPA routing. Must come after all API routes so /api/* is never shadowed.
+  if (process.env['NODE_ENV'] === 'production') {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const frontendDist = path.resolve(__dirname, '../../frontend/dist');
+    app.use(express.static(frontendDist, { maxAge: '1d', etag: true }));
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(frontendDist, 'index.html'));
     });
-  });
+  } else {
+    // Development: 404 JSON for unknown routes
+    app.use((_req, res) => {
+      res.status(404).json({
+        error: { code: 'NOT_FOUND', message: 'Route not found', details: {} },
+      });
+    });
+  }
 
   app.use(errorHandler);
 

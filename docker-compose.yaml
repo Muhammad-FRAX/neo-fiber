@@ -1,0 +1,93 @@
+# =============================================================================
+# Neo-Fiber — Production Docker Compose
+# DESIGN.md §28 Phase 9 / §13 distribution
+#
+# Usage (on the deployment host):
+#   cp .env.example .env && vi .env   # fill in secrets
+#   docker compose up -d
+#   docker compose logs -f app        # watch logs
+#
+# Migration (run once after deploy, or after each update):
+#   docker compose run --rm app node backend/dist/db/migrate.js up
+#
+# Dev compose (local development only — app runs via npm run dev):
+#   docker compose -f docker-compose.dev.yaml up -d
+# =============================================================================
+
+services:
+
+  # ── Application ─────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: neo-fiber-app:latest
+    restart: unless-stopped
+    ports:
+      - "${PORT:-5000}:5000"
+    environment:
+      NODE_ENV: production
+      PORT: "5000"
+
+      # App DB — points to the app-db service below
+      APP_DB_URL: "postgres://${APP_DB_USER:-neo_fiber}:${APP_DB_PASSWORD}@app-db:5432/${APP_DB_NAME:-neo_fiber}"
+
+      # DWH — external read-only Postgres (not managed by this compose file)
+      DWH_URL: "${DWH_URL}"
+
+      # Auth
+      LDAP_URL: "${LDAP_URL:-}"
+      LDAP_BIND_DN_TEMPLATE: "${LDAP_BIND_DN_TEMPLATE:-}"
+      AUTH_LOCAL_ONLY: "${AUTH_LOCAL_ONLY:-false}"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_TTL_SECONDS: "${JWT_TTL_SECONDS:-28800}"
+
+      # Alarm filtering (§7 premise 8) — empty = no reachability triggers until set
+      FIBER_CUT_ALARM_NAME: "${FIBER_CUT_ALARM_NAME:-}"
+
+      # Polling & streaming
+      DWH_POLL_INTERVAL_MS: "${DWH_POLL_INTERVAL_MS:-30000}"
+      SSE_HEARTBEAT_MS: "${SSE_HEARTBEAT_MS:-25000}"
+
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+
+    depends_on:
+      app-db:
+        condition: service_healthy
+    networks:
+      - neo-fiber-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ── Application database (PostGIS) ──────────────────────────────────────────
+  app-db:
+    image: postgis/postgis:16-3.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${APP_DB_NAME:-neo_fiber}"
+      POSTGRES_USER: "${APP_DB_USER:-neo_fiber}"
+      POSTGRES_PASSWORD: "${APP_DB_PASSWORD}"
+    volumes:
+      - app-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${APP_DB_USER:-neo_fiber} -d ${APP_DB_NAME:-neo_fiber}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - neo-fiber-net
+    # Do NOT expose port 5432 externally in production —
+    # only the app service needs DB access.
+
+networks:
+  neo-fiber-net:
+    driver: bridge
+
+volumes:
+  app-db-data:
+    # Nightly pg_dump recommended per §13 distribution — wire up
+    # an external backup volume or pg_dump cron if needed.
