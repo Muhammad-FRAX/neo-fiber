@@ -16,10 +16,10 @@ export default defineConfig({
       '@': '/src',
     },
   },
-  // maplibre-gl uses workers — exclude from dep optimizer to avoid
-  // "cannot use import.meta.url in CJS bundle" errors.
+  // maplibre-gl v5 is pure ESM — let Vite pre-bundle it normally.
+  // The old `exclude` workaround was for v2/v3 CJS interop; v5 breaks with it.
   optimizeDeps: {
-    exclude: ['maplibre-gl'],
+    include: ['maplibre-gl'],
   },
   test: {
     environment: 'jsdom',

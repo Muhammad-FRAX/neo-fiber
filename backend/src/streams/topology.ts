@@ -7,7 +7,7 @@ export function topologyStreamHandler(req: Request, res: Response): void {
   if (!stream) return;
 
   const unsubscribe = topologyBus.subscribe((event) => {
-    stream.write('topology_status', event);
+    stream.write('topology', event);
   });
 
   req.on('close', unsubscribe);
