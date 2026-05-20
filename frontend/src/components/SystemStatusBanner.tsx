@@ -60,9 +60,13 @@ interface AppDbDownScreenProps {
 export function AppDbDownScreen({ onHealthy }: AppDbDownScreenProps) {
   const [checking, setChecking] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Ref-based guard avoids stale closure: setInterval always captures the initial
+  // function, so `checking` state would always read as false inside the callback.
+  const isCheckingRef = useRef(false)
 
   const checkHealth = async () => {
-    if (checking) return
+    if (isCheckingRef.current) return
+    isCheckingRef.current = true
     setChecking(true)
     try {
       await apiClient.get("/api/v1/health")
@@ -71,14 +75,18 @@ export function AppDbDownScreen({ onHealthy }: AppDbDownScreenProps) {
     } catch {
       // still down
     } finally {
+      isCheckingRef.current = false
       setChecking(false)
     }
   }
 
+  // Use a ref so the interval always calls the latest version of checkHealth
+  const checkHealthRef = useRef(checkHealth)
+  checkHealthRef.current = checkHealth
+
   useEffect(() => {
-    intervalRef.current = setInterval(checkHealth, 10_000)
+    intervalRef.current = setInterval(() => checkHealthRef.current(), 10_000)
     return () => clearInterval(intervalRef.current!)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
