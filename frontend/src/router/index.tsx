@@ -141,7 +141,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/map" replace /> },
           { path: "map", element: <MapPage /> },
-          { path: "dashboard", element: <DashboardPage /> },
+          { path: "dashboard/*", element: <DashboardPage /> },
           { path: "admin/*", element: <AdminPage /> },
           { path: "profile", element: <ProfilePage /> },
         ],
