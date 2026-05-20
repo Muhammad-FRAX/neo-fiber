@@ -18,6 +18,12 @@ import docsRouter from './routes/docs.js';
 import tilesRouter from './routes/tiles.js';
 import mapRouter from './routes/map.js';
 import dashboardRouter from './routes/dashboard.js';
+import adminSitesRouter from './routes/admin/sites.js';
+import adminDevicesRouter from './routes/admin/devices.js';
+import adminLinksRouter from './routes/admin/links.js';
+import adminAlternatePathsRouter from './routes/admin/alternate-paths.js';
+import adminCsvRouter from './routes/admin/csv.js';
+import adminAuditRouter from './routes/admin/audit-log.js';
 
 // Rate limiters are bypassed in test mode to prevent flaky test failures
 // (test suites fire many requests in rapid succession by design).
@@ -76,6 +82,12 @@ export function createApp(): express.Express {
   app.use('/api/v1/alarms', alarmsRouter);
   app.use('/api/v1/map', mapRouter);
   app.use('/api/v1/dashboard', dashboardRouter);
+  app.use('/api/v1/admin/sites', adminSitesRouter);
+  app.use('/api/v1/admin/devices', adminDevicesRouter);
+  app.use('/api/v1/admin/links', adminLinksRouter);
+  app.use('/api/v1/admin/alternate-paths', adminAlternatePathsRouter);
+  app.use('/api/v1/admin/csv', adminCsvRouter);
+  app.use('/api/v1/admin/audit', adminAuditRouter);
   app.use('/tiles', tilesRouter);
   app.use('/api', docsRouter);
 
