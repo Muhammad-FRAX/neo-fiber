@@ -53,14 +53,23 @@ export async function ldapAuthenticate(
       connectTimeout: 10000,
     });
 
+    // settled prevents the error event (re-fired by client.destroy()) from
+    // double-logging or double-rejecting after the bind callback has already
+    // handled the error.
+    let settled = false;
+
     // Transport-level errors (host unreachable, connection refused)
     client.on('error', (err: Error) => {
+      if (settled) return;
+      settled = true;
       logger.warn({ err: err.message }, 'LDAP transport error');
       client.destroy();
       reject(new LdapUnreachableError(err.message));
     });
 
     client.bind(bindDn, password, (err) => {
+      if (settled) return;
+      settled = true;
       if (err) {
         client.destroy();
         logger.warn({ ldap_error: err.message }, 'LDAP bind failed');

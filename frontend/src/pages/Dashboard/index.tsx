@@ -69,11 +69,30 @@ const RANGE_LABELS: Record<RangePreset, string> = {
   "90d": "Last 90 days",
 }
 
-function rangeToQueryParams(preset: RangePreset): string {
+function toDateInputValue(d: Date): string {
+  return d.toISOString().slice(0, 10)
+}
+
+type RangeState =
+  | { mode: "preset"; preset: RangePreset }
+  | { mode: "custom"; from: string; to: string }
+
+function rangeToQueryParams(state: RangeState): string {
+  if (state.mode === "custom") {
+    const from = new Date(state.from)
+    const to = new Date(state.to)
+    to.setHours(23, 59, 59, 999)
+    return `?from=${from.toISOString()}&to=${to.toISOString()}`
+  }
   const to = new Date()
   const daysMap: Record<RangePreset, number> = { "7d": 7, "30d": 30, "90d": 90 }
-  const from = new Date(to.getTime() - daysMap[preset] * 24 * 60 * 60 * 1000)
+  const from = new Date(to.getTime() - daysMap[state.preset] * 24 * 60 * 60 * 1000)
   return `?from=${from.toISOString()}&to=${to.toISOString()}`
+}
+
+function rangeLabel(state: RangeState): string {
+  if (state.mode === "custom") return `${state.from} → ${state.to}`
+  return RANGE_LABELS[state.preset]
 }
 
 // ── Supporting KPI strip ──────────────────────────────────────────────────────
@@ -358,29 +377,57 @@ function TabNav() {
 // ── Date range selector ───────────────────────────────────────────────────────
 
 interface RangeSelectorProps {
-  value: RangePreset
-  onChange: (v: RangePreset) => void
+  value: RangeState
+  onChange: (v: RangeState) => void
 }
 
 function RangeSelector({ value, onChange }: RangeSelectorProps) {
+  const today = toDateInputValue(new Date())
+  const defaultFrom = toDateInputValue(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+
+  const isCustom = value.mode === "custom"
+
   return (
-    <div
-      role="group"
-      aria-label="Date range"
-      style={{
-        display: "flex",
-        gap: 4,
-        background: "var(--bg-elevated)",
-        border: "1px solid var(--border)",
-        borderRadius: 6,
-        padding: 3,
-      }}
-    >
-      {(["7d", "30d", "90d"] as RangePreset[]).map((p) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      <div
+        role="group"
+        aria-label="Date range preset"
+        style={{
+          display: "flex",
+          gap: 4,
+          background: "var(--bg-elevated)",
+          border: "1px solid var(--border)",
+          borderRadius: 6,
+          padding: 3,
+        }}
+      >
+        {(["7d", "30d", "90d"] as RangePreset[]).map((p) => (
+          <button
+            key={p}
+            onClick={() => onChange({ mode: "preset", preset: p })}
+            aria-pressed={value.mode === "preset" && value.preset === p}
+            style={{
+              padding: "4px 12px",
+              borderRadius: 4,
+              border: "none",
+              fontSize: "var(--text-xs)",
+              fontWeight: 600,
+              cursor: "pointer",
+              background: value.mode === "preset" && value.preset === p ? "var(--accent-500)" : "transparent",
+              color: value.mode === "preset" && value.preset === p ? "#fff" : "var(--text-muted)",
+              transition: "background var(--duration-75) var(--ease-default), color var(--duration-75) var(--ease-default)",
+            }}
+          >
+            {RANGE_LABELS[p].split(" ")[1]}
+          </button>
+        ))}
         <button
-          key={p}
-          onClick={() => onChange(p)}
-          aria-pressed={value === p}
+          onClick={() => {
+            if (!isCustom) {
+              onChange({ mode: "custom", from: defaultFrom, to: today })
+            }
+          }}
+          aria-pressed={isCustom}
           style={{
             padding: "4px 12px",
             borderRadius: 4,
@@ -388,14 +435,69 @@ function RangeSelector({ value, onChange }: RangeSelectorProps) {
             fontSize: "var(--text-xs)",
             fontWeight: 600,
             cursor: "pointer",
-            background: value === p ? "var(--accent-500)" : "transparent",
-            color: value === p ? "#fff" : "var(--text-muted)",
+            background: isCustom ? "var(--accent-500)" : "transparent",
+            color: isCustom ? "#fff" : "var(--text-muted)",
             transition: "background var(--duration-75) var(--ease-default), color var(--duration-75) var(--ease-default)",
           }}
         >
-          {RANGE_LABELS[p].split(" ")[1]}
+          Custom
         </button>
-      ))}
+      </div>
+
+      {isCustom && (
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 6 }}
+          aria-label="Custom date range"
+        >
+          <input
+            type="date"
+            aria-label="From date"
+            value={(value as Extract<RangeState, { mode: "custom" }>).from}
+            max={today}
+            onChange={(e) =>
+              onChange({
+                mode: "custom",
+                from: e.target.value,
+                to: (value as Extract<RangeState, { mode: "custom" }>).to,
+              })
+            }
+            style={{
+              padding: "4px 8px",
+              borderRadius: 4,
+              border: "1px solid var(--border)",
+              background: "var(--bg-elevated)",
+              color: "var(--text)",
+              fontSize: "var(--text-xs)",
+              fontFamily: "var(--font-mono)",
+              cursor: "pointer",
+            }}
+          />
+          <span style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>→</span>
+          <input
+            type="date"
+            aria-label="To date"
+            value={(value as Extract<RangeState, { mode: "custom" }>).to}
+            max={today}
+            onChange={(e) =>
+              onChange({
+                mode: "custom",
+                from: (value as Extract<RangeState, { mode: "custom" }>).from,
+                to: e.target.value,
+              })
+            }
+            style={{
+              padding: "4px 8px",
+              borderRadius: 4,
+              border: "1px solid var(--border)",
+              background: "var(--bg-elevated)",
+              color: "var(--text)",
+              fontSize: "var(--text-xs)",
+              fontFamily: "var(--font-mono)",
+              cursor: "pointer",
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }
@@ -403,7 +505,7 @@ function RangeSelector({ value, onChange }: RangeSelectorProps) {
 // ── Overview tab (all charts) ─────────────────────────────────────────────────
 
 interface OverviewProps {
-  range: RangePreset
+  range: RangeState
   queryParams: string
 }
 
@@ -441,7 +543,7 @@ function Overview({ range, queryParams }: OverviewProps) {
         sparkline={summary.data?.availability_sparkline ?? []}
         isLoading={summary.isLoading}
         error={summary.isError}
-        rangeLabel={RANGE_LABELS[range]}
+        rangeLabel={rangeLabel(range)}
       />
 
       {/* Supporting KPI strip */}
@@ -615,7 +717,7 @@ function FiberTab({ queryParams }: { queryParams: string }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const [range, setRange] = useState<RangePreset>("30d")
+  const [range, setRange] = useState<RangeState>({ mode: "preset", preset: "30d" })
   const queryParams = rangeToQueryParams(range)
   const location = useLocation()
 
